@@ -28,7 +28,7 @@ Working-tree validation date: `2026-07-29`
 
 The repository workflow is configured to repeat policy and Python tests on Python 3.10, 3.11, and 3.14; build/test with GCC, Clang, and MSVC; run Clang AddressSanitizer and UndefinedBehaviorSanitizer; validate the installed CMake consumer; build/check Python distributions; and upload test artifacts.
 
-These hosted jobs remain pending until the repository is published and its first GitHub Actions run completes. Earlier bundle results are not treated as validation of the modified working tree.
+These hosted jobs must pass on the exact commit before it is tagged. Earlier bundle results are not treated as validation of the modified working tree.
 
 ## Portable behavior covered
 

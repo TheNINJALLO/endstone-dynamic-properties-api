@@ -13,7 +13,7 @@ Version: **0.1.0-alpha.1**
 - Cross-target atomic transactions and rollback: implemented in the reference adapter.
 - Event cancellation, external-mutation contract, watches, and audits: implemented.
 - Commit-time validation is serialized across shared-adapter services; listener failures are isolated and audited.
-- GCC, Clang, and sanitizer hosted jobs: configured; pending the first repository CI run.
+- GCC, Clang, and sanitizer hosted jobs: configured and required to pass on `main` before tagging.
 - MSVC 19.44 Debug and Release builds with warnings as errors: validated.
 - C++ and Python tests: passing locally (MSVC Debug/Release and Python 3.11).
 - Installed CMake package consumer (`EndstoneDynamicProperties::core`): passing.

@@ -195,7 +195,7 @@ int main() {
     std::string after_transaction_id;
     std::size_t after_transaction_collection_count = 0;
     const auto before_transaction_subscription = events->subscribe(
-        EventFilter{DynamicPropertyEventKind::BeforeTransaction},
+        EventFilter{DynamicPropertyEventKind::BeforeTransaction, {}, {}, {}, {}},
         [&](DynamicPropertyEvent &event) {
             before_transaction_id = event.transaction_id;
             event.transaction_id = "listener-forged-id";
@@ -203,7 +203,7 @@ int main() {
             event.before.clear();
         });
     const auto after_transaction_subscription = events->subscribe(
-        EventFilter{DynamicPropertyEventKind::AfterTransaction},
+        EventFilter{DynamicPropertyEventKind::AfterTransaction, {}, {}, {}, {}},
         [&](DynamicPropertyEvent &event) {
             after_transaction_id = event.transaction_id;
             after_transaction_collection_count = event.collections.size();
@@ -362,7 +362,7 @@ int main() {
     AccessContext external{"admin", "script-api", true, MutationOrigin::ScriptApi, "hook"};
     MutationOrigin observed_external_origin = MutationOrigin::Unknown;
     const auto external_subscription = events->subscribe(
-        EventFilter{DynamicPropertyEventKind::BeforeExternalMutation},
+        EventFilter{DynamicPropertyEventKind::BeforeExternalMutation, {}, {}, {}, {}},
         [&](DynamicPropertyEvent &event) { observed_external_origin = event.actor.origin; });
     SetPropertyOperation external_operation{world, "external", true, {}};
     auto gate = service.beforeExternalMutation(external_operation, external, true);
@@ -517,9 +517,9 @@ int main() {
         callbacks_ready.arrive_and_wait();
     };
     const auto first_align_id = first_service_events->subscribe(
-        EventFilter{DynamicPropertyEventKind::BeforeMutation}, align_callback);
+        EventFilter{DynamicPropertyEventKind::BeforeMutation, {}, {}, {}, {}}, align_callback);
     const auto second_align_id = second_service_events->subscribe(
-        EventFilter{DynamicPropertyEventKind::BeforeMutation}, align_callback);
+        EventFilter{DynamicPropertyEventKind::BeforeMutation, {}, {}, {}, {}}, align_callback);
     std::array<OperationResult, 2> concurrent_results;
     std::thread first_writer([&] {
         concurrent_results[0] = first_shared_service.set(
