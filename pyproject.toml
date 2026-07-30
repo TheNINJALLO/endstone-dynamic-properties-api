@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools==83.0.0", "wheel==0.47.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "endstone-dynamic-properties-api"
+version = "0.1.0a1"
+description = "Unified world, actor, item, storage and block dynamic-properties API for Endstone"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{name = "TheNINJALLO"}]
+keywords = ["endstone", "minecraft", "bedrock", "dynamic-properties", "persistence"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Operating System :: OS Independent",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/TheNINJALLO/endstone-dynamic-properties-api"
+Repository = "https://github.com/TheNINJALLO/endstone-dynamic-properties-api"
+Issues = "https://github.com/TheNINJALLO/endstone-dynamic-properties-api/issues"
+Changelog = "https://github.com/TheNINJALLO/endstone-dynamic-properties-api/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+
+[tool.setuptools.packages.find]
+where = ["python"]
+
+[tool.setuptools.package-data]
+endstone_dynamic_properties = ["py.typed"]

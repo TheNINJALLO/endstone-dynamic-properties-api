@@ -1,0 +1,8 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/EndstoneDynamicPropertiesTargets.cmake")
+
+set(EndstoneDynamicProperties_RELEASE_VERSION
+    "@ENDSTONE_DYNAMIC_PROPERTIES_RELEASE_VERSION@")
+
+check_required_components(EndstoneDynamicProperties)

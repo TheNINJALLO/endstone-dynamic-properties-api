@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "project": "endstone-dynamic-properties-api",
+  "api": "0.1.0",
+  "service": "endstone:dynamic-properties:v1",
+  "adapters": [
+    {
+      "bds_package": "1.26.33.1",
+      "bds_runtime": "26.33",
+      "endstone": "0.11.6",
+      "status": "guarded-source-adapter",
+      "registration": "disabled-until-complete-control-probe"
+    }
+  ],
+  "complete_control_requires": [
+    "world",
+    "online_players",
+    "offline_players",
+    "loaded_entities",
+    "stored_entities",
+    "player_item_slots",
+    "block_container_item_slots",
+    "dropped_items",
+    "supported_block_entities",
+    "external_mutation_observation",
+    "external_mutation_cancellation",
+    "atomic_cross_target_transactions",
+    "rollback",
+    "persistence_flush"
+  ]
+}

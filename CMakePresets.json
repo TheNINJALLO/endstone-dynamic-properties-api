@@ -1,0 +1,65 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "portable-base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_TESTS": "ON",
+        "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_EXAMPLES": "ON",
+        "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN": "OFF",
+        "ENDSTONE_DYNAMIC_PROPERTIES_WARNINGS_AS_ERRORS": "ON"
+      }
+    },
+    {
+      "name": "portable-debug",
+      "displayName": "Portable Debug",
+      "inherits": "portable-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "portable-release",
+      "displayName": "Portable Release",
+      "inherits": "portable-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "portable-debug",
+      "configurePreset": "portable-debug",
+      "configuration": "Debug",
+      "jobs": 0
+    },
+    {
+      "name": "portable-release",
+      "configurePreset": "portable-release",
+      "configuration": "Release",
+      "jobs": 0
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "portable-debug",
+      "configurePreset": "portable-debug",
+      "configuration": "Debug",
+      "output": {"outputOnFailure": true}
+    },
+    {
+      "name": "portable-release",
+      "configurePreset": "portable-release",
+      "configuration": "Release",
+      "output": {"outputOnFailure": true}
+    }
+  ]
+}

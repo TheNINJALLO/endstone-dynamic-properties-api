@@ -1,0 +1,161 @@
+name: Portable API CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: Metadata and fail-closed policy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+      - name: Verify project metadata
+        run: python scripts/verify_project_metadata.py
+      - name: Verify native boundary remains closed
+        run: python tools/verify_fail_closed.py
+      - name: Inspect blocked manifests and reject activation
+        shell: bash
+        run: |
+          set -euo pipefail
+          for manifest in native/manifests/*-1.26.33.1.json; do
+            python tools/verify_native_manifest.py "$manifest" --allow-incomplete
+            if python tools/verify_native_manifest.py "$manifest"; then
+              echo "Incomplete manifest unexpectedly opened the gate: $manifest" >&2
+              exit 1
+            fi
+          done
+          if python tools/activate_verified_manifest.py native/manifests/linux-x64-1.26.33.1.json; then
+            echo "Activation unexpectedly accepted an incomplete manifest" >&2
+            exit 1
+          fi
+
+  python:
+    name: Python ${{ matrix.python }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install package and test dependencies
+        run: python -m pip install -e ".[test]"
+      - name: Compile package and tools
+        run: python -m compileall -q python tools scripts
+      - name: Run Python tests
+        run: python -m pytest -q tests/python
+
+  python-package:
+    name: Build and inspect Python distributions
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install pinned packaging tools
+        run: python -m pip install -r .github/release-requirements.txt
+      - name: Build wheel and source distribution
+        run: python -m build
+      - name: Validate distribution metadata
+        run: python -m twine check dist/*
+      - name: Test wheel in isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/dynamic-properties-wheel
+          /tmp/dynamic-properties-wheel/bin/python -m pip install dist/*.whl
+          /tmp/dynamic-properties-wheel/bin/python - <<'PY'
+          from endstone_dynamic_properties import AccessContext, CollectionRef
+          from endstone_dynamic_properties import DynamicPropertyService, DynamicPropertyTarget
+          api = DynamicPropertyService()
+          context = AccessContext("wheel-smoke")
+          collection = api.access_policy.plugin_collection(context.plugin_id, "smoke")
+          ref = CollectionRef(DynamicPropertyTarget.world(), collection)
+          assert api.set(ref, "ready", True, context).ok
+          assert api.get(ref, "ready", context).value is True
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-distributions
+          path: dist/*
+          if-no-files-found: error
+
+  cpp:
+    name: C++ ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            compiler: GCC
+            compiler_argument: -DCMAKE_CXX_COMPILER=g++
+          - os: ubuntu-24.04
+            compiler: Clang
+            compiler_argument: -DCMAKE_CXX_COMPILER=clang++
+          - os: windows-2022
+            compiler: MSVC
+            compiler_argument: ""
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Configure portable Release build
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_TESTS=ON
+          -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_EXAMPLES=ON
+          -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=OFF
+          ${{ matrix.compiler_argument }}
+      - name: Build portable core
+        run: cmake --build build --config Release --parallel
+      - name: Run core and installed-consumer tests
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Run complete-control example
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            ./build/Release/dynamic_properties_complete_example.exe
+          else
+            ./build/dynamic_properties_complete_example
+          fi
+
+  sanitizers:
+    name: Clang ASan and UBSan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Configure sanitizer build
+        run: >-
+          cmake -S . -B build/sanitizers
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_TESTS=ON
+          -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_EXAMPLES=OFF
+          -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=OFF
+      - name: Build sanitizer targets
+        run: cmake --build build/sanitizers --parallel
+      - name: Run sanitizer tests
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build/sanitizers --output-on-failure -LE packaging
