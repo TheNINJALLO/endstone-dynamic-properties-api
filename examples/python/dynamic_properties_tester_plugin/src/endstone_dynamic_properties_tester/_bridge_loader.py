@@ -21,6 +21,7 @@ REQUIRED_FUNCTIONS = (
     "drain_external_events",
     "external_watch_status",
     "stop_external_watch",
+    "probe_external_hooks",
 )
 
 

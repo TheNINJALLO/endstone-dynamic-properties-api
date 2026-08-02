@@ -59,7 +59,8 @@ def test_exact_operator_only_command_surface() -> None:
         for item in usages
     )
     assert any(
-        "(start|drain|status|stop)<phase: DpTestWatchPhase>" in item for item in usages
+        "(start|probe|drain|status|stop)<phase: DpTestWatchPhase>" in item
+        for item in usages
     )
     assert any(
         "(prepare|verify)<phase: DpTestPersistencePhase>" in item for item in usages

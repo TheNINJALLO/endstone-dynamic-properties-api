@@ -172,6 +172,9 @@ def validate_reports(server_dir: Path) -> dict[str, Any]:
 
     inventory = _require_report(reports, "inventory", "inventory_captured")
     acceptance = _require_report(reports, "acceptance", "passed")
+    hook_probe = _require_report(
+        reports, "external_watch", "external_hook_probe_passed"
+    )
     persistence = _require_report(reports, "persistence", "persistence_passed")
     checks = acceptance.get("checks")
     if not isinstance(checks, list) or not checks:
@@ -226,6 +229,7 @@ def validate_reports(server_dir: Path) -> dict[str, Any]:
         "adapter": service_status.get("adapter"),
         "inventory_run_id": inventory.get("run_id"),
         "acceptance_run_id": acceptance.get("run_id"),
+        "hook_probe_run_id": hook_probe.get("run_id"),
         "persistence_run_id": persistence.get("run_id"),
     }
 
@@ -261,6 +265,9 @@ def _run(args: argparse.Namespace) -> None:
         )
         first.command(
             "dptest run world confirm", "Dynamic Properties live world suite PASSED", 180
+        )
+        first.command(
+            "dptest watch probe", "Dynamic Properties external hook probe PASSED", 120
         )
         first.command(
             "dptest persistence prepare", "Restart the server cleanly", 120

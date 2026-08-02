@@ -72,9 +72,19 @@ def _reports(tmp_path: Path) -> Path:
     )
     _write_report(
         reports,
-        "persistence.json",
+        "hook-probe.json",
         {
             "run_id": "3" * 32,
+            "mode": "external_watch",
+            "state": "completed",
+            "outcome": "external_hook_probe_passed",
+        },
+    )
+    _write_report(
+        reports,
+        "persistence.json",
+        {
+            "run_id": "4" * 32,
             "mode": "persistence",
             "state": "completed",
             "outcome": "persistence_passed",
@@ -87,7 +97,7 @@ def test_validate_reports_requires_crud_inventory_hooks_and_restart(tmp_path: Pa
     summary = validate_reports(_reports(tmp_path))
 
     assert summary["result"] == "passed"
-    assert summary["report_count"] == 3
+    assert summary["report_count"] == 4
     assert summary["acceptance_checks"] == 1
 
 

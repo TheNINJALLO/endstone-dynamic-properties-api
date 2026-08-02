@@ -28,6 +28,7 @@ operator:
 /dptest watch start
 # Make dynamic-property changes through Script API or another native caller.
 /dptest watch drain
+/dptest watch probe
 /dptest watch status
 /dptest watch stop
 /dptest persistence prepare
@@ -55,7 +56,9 @@ removes the queued events into a report and records if the 1,024-event queue
 overflowed. Watching proves interception only when the service reports an
 active external-mutation hook capability. The exact-hash experimental live
 adapter enables that capability for its supported world, online-player, and
-loaded-entity targets.
+loaded-entity targets. `watch probe` performs an operator-only, self-cleaning
+world probe through the raw hooked Bedrock entry points and verifies
+set/remove/clear before-and-after interception plus cancellation.
 
 `persistence prepare` records a reload-stable, random server-process
 incarnation token. `persistence verify` refuses to proceed until that token has

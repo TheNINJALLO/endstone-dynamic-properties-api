@@ -25,6 +25,9 @@
 #ifndef ENDSTONE_DYNAMIC_PROPERTIES_PYTHON_VERSION
 #error "ENDSTONE_DYNAMIC_PROPERTIES_PYTHON_VERSION must be supplied by CMake"
 #endif
+#ifndef ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633
+#define ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 0
+#endif
 
 namespace py = pybind11;
 
@@ -745,6 +748,47 @@ py::dict flush(endstone::Server &server, const py::dict &target) {
     return operationToDict(service->flush(parseTarget(target), testerContext()));
 }
 
+py::dict probeExternalHooks(
+    endstone::Server &server,
+    const py::dict &target,
+    const std::string &collection,
+    const std::string &key_prefix) {
+    constexpr std::string_view TesterCollection =
+        "endstone-plugin:dynamic-properties-tester:acceptance";
+    if (collection != TesterCollection) {
+        throw py::value_error(
+            "external hook probe is restricted to the fixed tester collection");
+    }
+    if (!key_prefix.starts_with("dptest.hook.") || key_prefix.size() > 180) {
+        throw py::value_error(
+            "external hook probe requires a bounded dptest.hook.* key prefix");
+    }
+
+    ExperimentalExternalHookProbeResult result;
+#if ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 && defined(__linux__)
+    if (!loadService(server)) {
+        result.message = "service unavailable";
+    } else {
+        result = probeExperimentalLiveBds2633ExternalHooks(
+            CollectionRef{parseTarget(target), collection}, key_prefix);
+    }
+#else
+    static_cast<void>(server);
+    static_cast<void>(target);
+    result.message = "external hook probe is unavailable in this build";
+#endif
+    py::dict out;
+    out["ok"] = result.ok();
+    out["available"] = result.available;
+    out["set_intercepted"] = result.set_intercepted;
+    out["remove_intercepted"] = result.remove_intercepted;
+    out["clear_intercepted"] = result.clear_intercepted;
+    out["cancellation_blocked"] = result.cancellation_blocked;
+    out["cleanup_confirmed"] = result.cleanup_confirmed;
+    out["message"] = result.message;
+    return out;
+}
+
 } // namespace
 } // namespace endstone_dynamic_properties
 
@@ -787,4 +831,8 @@ PYBIND11_MODULE(_endstone_dynamic_properties_live, module) {
     module.def(
         "stop_external_watch", &endstone_dynamic_properties::stopExternalWatch,
         py::arg("server"));
+    module.def(
+        "probe_external_hooks", &endstone_dynamic_properties::probeExternalHooks,
+        py::arg("server"), py::arg("target"), py::arg("collection"),
+        py::arg("key_prefix"));
 }

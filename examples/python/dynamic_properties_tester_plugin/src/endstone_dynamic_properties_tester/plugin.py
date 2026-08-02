@@ -99,7 +99,7 @@ class DynamicPropertiesTesterPlugin(Plugin):
                 ),
                 (
                     "/dptest (watch)<action: DpTestWatchAction> "
-                    "(start|drain|status|stop)<phase: DpTestWatchPhase>"
+                    "(start|probe|drain|status|stop)<phase: DpTestWatchPhase>"
                 ),
             ],
             "permissions": ["dptest.admin"],
@@ -1221,11 +1221,14 @@ class DynamicPropertiesTesterPlugin(Plugin):
     def _handle_watch(self, sender: CommandSender, args: list[str]) -> bool:
         if len(args) != 1 or args[0].casefold() not in {
             "start",
+            "probe",
             "drain",
             "status",
             "stop",
         }:
-            sender.send_message("Usage: /dptest watch <start|drain|status|stop>")
+            sender.send_message(
+                "Usage: /dptest watch <start|probe|drain|status|stop>"
+            )
             return True
         bridge = self._bridge(sender)
         if bridge is None:
@@ -1234,6 +1237,47 @@ class DynamicPropertiesTesterPlugin(Plugin):
         try:
             if phase == "start":
                 response = dict(bridge.start_external_watch(self.server))
+            elif phase == "probe":
+                report = new_report(
+                    mode="external_watch",
+                    operator=self._sender_name(sender),
+                    scopes=["native_hook_probe"],
+                )
+                report["service_status"] = self._json_safe(
+                    self._require_complete_service(
+                        bridge, [("world", self._world_target())]
+                    )
+                )
+                response = dict(
+                    bridge.probe_external_hooks(
+                        self.server,
+                        self._world_target(),
+                        COLLECTION,
+                        f"dptest.hook.{report['run_id']}",
+                    )
+                )
+                report["hook_probe"] = self._json_safe(response)
+                for name in (
+                    "available",
+                    "set_intercepted",
+                    "remove_intercepted",
+                    "clear_intercepted",
+                    "cancellation_blocked",
+                    "cleanup_confirmed",
+                ):
+                    self._record_check(
+                        report,
+                        f"external_hook.{name}",
+                        response.get(name) is True,
+                        str(response.get("message") or f"{name} was not confirmed"),
+                    )
+                report["state"] = "completed"
+                report["outcome"] = "external_hook_probe_passed"
+                report["completed_at_utc"] = utc_now()
+                path = self._save(report, checkpoint=False)
+                sender.send_message("Dynamic Properties external hook probe PASSED.")
+                sender.send_message(f"Report: {path}")
+                return True
             elif phase == "stop":
                 response = dict(bridge.stop_external_watch(self.server))
             elif phase == "status":
@@ -1322,7 +1366,7 @@ class DynamicPropertiesTesterPlugin(Plugin):
             "/dptest inventory <world|player|configured|all> - capture existing tester-visible properties"
         )
         sender.send_message(
-            "/dptest watch <start|drain|status|stop> - observe native external mutations"
+            "/dptest watch <start|probe|drain|status|stop> - observe or actively probe native external mutations"
         )
         sender.send_message(
             "/dptest persistence prepare - write and flush a restart token"

@@ -14,6 +14,21 @@ namespace endstone_dynamic_properties {
 
 class DynamicPropertyService;
 
+struct ExperimentalExternalHookProbeResult {
+    bool available{};
+    bool set_intercepted{};
+    bool remove_intercepted{};
+    bool clear_intercepted{};
+    bool cancellation_blocked{};
+    bool cleanup_confirmed{};
+    std::string message;
+
+    [[nodiscard]] bool ok() const noexcept {
+        return available && set_intercepted && remove_intercepted &&
+               clear_intercepted && cancellation_blocked && cleanup_confirmed;
+    }
+};
+
 struct NativeActivationReport {
     bool runtime_version_match{};
     bool endstone_version_match{};
@@ -51,5 +66,9 @@ std::shared_ptr<IDynamicPropertyAdapter> makeBds2633DynamicPropertyAdapter(
 void bindExperimentalLiveBds2633Service(
     std::shared_ptr<DynamicPropertyService> service);
 void unbindExperimentalLiveBds2633Service() noexcept;
+[[nodiscard]] ExperimentalExternalHookProbeResult
+probeExperimentalLiveBds2633ExternalHooks(
+    const CollectionRef &ref,
+    std::string key_prefix);
 
 } // namespace endstone_dynamic_properties

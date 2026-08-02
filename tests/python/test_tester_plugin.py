@@ -277,6 +277,25 @@ class FakeBridge:
             "dropped": 0,
         }
 
+    def probe_external_hooks(
+        self,
+        server: Any,
+        target: dict[str, Any],
+        collection: str,
+        key_prefix: str,
+    ) -> dict[str, Any]:
+        self.calls.append("probe_external_hooks")
+        return {
+            "ok": True,
+            "available": True,
+            "set_intercepted": True,
+            "remove_intercepted": True,
+            "clear_intercepted": True,
+            "cancellation_blocked": True,
+            "cleanup_confirmed": True,
+            "message": "probe passed",
+        }
+
 
 def make_plugin(folder: str, bridge: FakeBridge | None) -> Any:
     plugin = object.__new__(PluginClass)
@@ -914,6 +933,22 @@ def test_external_watch_drain_writes_a_sealed_report() -> None:
         assert report["outcome"] == "external_events_drained"
         assert report["external_events"][0]["key"] == "new-property"
         assert bridge.external_events == []
+        REPORT.validate_report(report)
+
+
+def test_external_hook_probe_writes_a_sealed_report() -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+        bridge = FakeBridge()
+        plugin = make_plugin(temporary, bridge)
+        sender = FakeSender()
+
+        assert plugin._handle_watch(sender, ["probe"])
+
+        report = REPORT.load_latest(Path(temporary))
+        assert report["outcome"] == "external_hook_probe_passed"
+        assert len(report["checks"]) == 6
+        assert all(check["passed"] is True for check in report["checks"])
+        assert bridge.calls == ["probe_external_hooks"]
         REPORT.validate_report(report)
 
 

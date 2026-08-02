@@ -201,10 +201,20 @@ struct NativeHookState {
     ClearCollectionFunction clear{};
 };
 
+struct HookInvocation {
+    ExperimentalLiveBds2633Adapter *adapter{};
+    std::shared_ptr<DynamicPropertyService> service;
+    SetPropertyFunction set{};
+    RemovePropertyFunction remove{};
+    ClearCollectionFunction clear{};
+};
+
 NativeHookState &nativeHookState() {
     static NativeHookState State;
     return State;
 }
+
+HookInvocation hookInvocation();
 
 thread_local bool InNativeApiMutation = false;
 
@@ -327,6 +337,148 @@ public:
                     player->getXuid(), world.world_id)));
             }
         }
+    }
+
+    [[nodiscard]] ExperimentalExternalHookProbeResult probeExternalHooks(
+        const CollectionRef &ref,
+        const std::string &key_prefix) {
+        std::lock_guard lock(mutex_);
+        ExperimentalExternalHookProbeResult result;
+        result.available = hooks_installed_ && ready();
+        if (!result.available) {
+            result.message = "experimental native hooks are not installed";
+            return result;
+        }
+
+        const auto invocation = hookInvocation();
+        const auto raw = resolveFunctions();
+        const auto resolved = resolveTarget(ref.target);
+        if (!invocation.service || !raw.set || !raw.remove || !raw.clear ||
+            !resolved.ok()) {
+            result.message = resolved.message.empty()
+                ? "external hook probe could not resolve its native boundary"
+                : resolved.message;
+            return result;
+        }
+        auto baseline = captureUnlocked(ref);
+        if (!baseline.ok() || !baseline.snapshot ||
+            !baseline.snapshot->properties.empty()) {
+            result.message =
+                "external hook probe requires an empty tester collection";
+            return result;
+        }
+
+        const auto set_key = key_prefix + ".set";
+        const auto clear_key_one = key_prefix + ".clear-one";
+        const auto clear_key_two = key_prefix + ".clear-two";
+        const auto cancelled_key = key_prefix + ".cancelled";
+        std::map<std::string, std::size_t> before_counts;
+        std::map<std::string, std::size_t> after_counts;
+        bool cancellation_listener_called = false;
+        const auto event_bus = invocation.service->eventBus();
+        if (!event_bus) {
+            result.message = "external hook probe has no event bus";
+            return result;
+        }
+
+        struct SubscriptionGuard {
+            std::shared_ptr<DynamicPropertyEventBus> event_bus;
+            std::vector<std::uint64_t> ids;
+            ~SubscriptionGuard() {
+                for (const auto id : ids) event_bus->unsubscribe(id);
+            }
+        } subscriptions{event_bus, {}};
+        subscriptions.ids.push_back(event_bus->subscribe(
+            EventFilter{
+                DynamicPropertyEventKind::BeforeExternalMutation,
+                std::nullopt,
+                ref.target,
+                ref.collection,
+                std::nullopt,
+            },
+            [&](DynamicPropertyEvent &event) {
+                ++before_counts[event.operation_name];
+            }));
+        subscriptions.ids.push_back(event_bus->subscribe(
+            EventFilter{
+                DynamicPropertyEventKind::AfterExternalMutation,
+                std::nullopt,
+                ref.target,
+                ref.collection,
+                std::nullopt,
+            },
+            [&](DynamicPropertyEvent &event) {
+                ++after_counts[event.operation_name];
+            }));
+        subscriptions.ids.push_back(event_bus->subscribe(
+            EventFilter{
+                DynamicPropertyEventKind::BeforeExternalMutation,
+                std::nullopt,
+                ref.target,
+                ref.collection,
+                cancelled_key,
+            },
+            [&](DynamicPropertyEvent &event) {
+                cancellation_listener_called = true;
+                event.cancelled = true;
+                event.cancellation_reason = "acceptance hook cancellation probe";
+            }));
+
+        const auto internal = [](auto &&call) {
+            const bool previous = std::exchange(InNativeApiMutation, true);
+            struct MutationGuard {
+                bool previous;
+                ~MutationGuard() { InNativeApiMutation = previous; }
+            } guard{previous};
+            call();
+        };
+        const auto snapshotHas = [&](std::string_view key) {
+            const auto captured = captureUnlocked(ref);
+            return captured.ok() && captured.snapshot &&
+                   captured.snapshot->properties.contains(std::string(key));
+        };
+
+        const NativePropertyValue probe_value{std::string("external-hook-probe")};
+        raw.set(resolved.properties, set_key, probe_value, ref.collection);
+        const bool set_applied = snapshotHas(set_key);
+        const bool remove_result =
+            raw.remove(resolved.properties, set_key, ref.collection);
+        const bool remove_applied = remove_result && !snapshotHas(set_key);
+
+        internal([&] {
+            functions_.set(
+                resolved.properties, clear_key_one, probe_value, ref.collection);
+            functions_.set(
+                resolved.properties, clear_key_two, probe_value, ref.collection);
+        });
+        raw.clear(resolved.properties, ref.collection);
+        const auto after_clear = captureUnlocked(ref);
+        const bool clear_applied = after_clear.ok() && after_clear.snapshot &&
+                                   after_clear.snapshot->properties.empty();
+
+        raw.set(
+            resolved.properties, cancelled_key, probe_value, ref.collection);
+        const bool cancellation_applied = !snapshotHas(cancelled_key);
+
+        internal([&] { functions_.clear(resolved.properties, ref.collection); });
+        const auto after_cleanup = captureUnlocked(ref);
+        result.cleanup_confirmed = after_cleanup.ok() && after_cleanup.snapshot &&
+                                   after_cleanup.snapshot->properties.empty();
+        result.set_intercepted =
+            set_applied && before_counts["set_property"] >= 2 &&
+            after_counts["set_property"] == 1;
+        result.remove_intercepted =
+            remove_applied && before_counts["remove_property"] == 1 &&
+            after_counts["remove_property"] == 1;
+        result.clear_intercepted =
+            clear_applied && before_counts["clear_collection"] == 1 &&
+            after_counts["clear_collection"] == 1;
+        result.cancellation_blocked =
+            cancellation_listener_called && cancellation_applied;
+        result.message = result.ok()
+            ? "external set/remove/clear interception and cancellation passed"
+            : "external native hook probe did not satisfy every assertion";
+        return result;
     }
 
     [[nodiscard]] std::optional<DynamicPropertyTarget> targetFor(
@@ -707,14 +859,6 @@ private:
     bool hooks_installed_{};
 };
 
-struct HookInvocation {
-    ExperimentalLiveBds2633Adapter *adapter{};
-    std::shared_ptr<DynamicPropertyService> service;
-    SetPropertyFunction set{};
-    RemovePropertyFunction remove{};
-    ClearCollectionFunction clear{};
-};
-
 HookInvocation hookInvocation() {
     auto &state = nativeHookState();
     std::lock_guard lock(state.mutex);
@@ -869,6 +1013,24 @@ void unbindExperimentalLiveBds2633Service() noexcept {
     auto &state = nativeHookState();
     std::lock_guard lock(state.mutex);
     state.service.reset();
+}
+
+ExperimentalExternalHookProbeResult probeExperimentalLiveBds2633ExternalHooks(
+    const CollectionRef &ref,
+    std::string key_prefix) {
+    const auto invocation = hookInvocation();
+    if (!invocation.adapter) {
+        return {
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            "experimental live adapter is unavailable",
+        };
+    }
+    return invocation.adapter->probeExternalHooks(ref, key_prefix);
 }
 
 } // namespace endstone_dynamic_properties
