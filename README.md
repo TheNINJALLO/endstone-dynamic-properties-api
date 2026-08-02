@@ -248,6 +248,12 @@ files under their install-ready names. Gate-closed filenames remain visibly
 marked `gate-closed`; the release workflow removes that mode only after the
 same native verifier reports a complete proof.
 
+Linux native release assets are built on the Endstone-supported Ubuntu 22.04
+floor and rejected during packaging if either the plugin or tester bridge
+imports a glibc symbol newer than `GLIBC_2.35`. The compatibility-qualified
+`.so` and ZIP filenames include `glibc-2.35`; the installed plugin keeps the
+stable `endstone_dynamic_properties_api.so` name.
+
 ## Repository map
 
 - `include/endstone_dynamic_properties/`: public C++ ABI and native gate.

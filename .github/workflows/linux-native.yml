@@ -30,7 +30,9 @@ concurrency:
 jobs:
   linux-native:
     name: Build Linux x86-64 .so and CPython 3.14 tester
-    runs-on: ubuntu-24.04
+    # Endstone supports Ubuntu 22.04 and Debian 12 as its Linux floor. Native
+    # release binaries must be linked on that floor, not on a newer runner.
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     env:
       SOURCE_DATE_EPOCH: ${{ inputs.source_date_epoch || '315532800' }}
@@ -48,9 +50,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          llvm_key="$RUNNER_TEMP/llvm-snapshot.gpg.key"
+          llvm_keyring="$RUNNER_TEMP/apt.llvm.org.gpg"
+          curl --fail --silent --show-error --location \
+            https://apt.llvm.org/llvm-snapshot.gpg.key \
+            --output "$llvm_key"
+          fingerprint="$(gpg --show-keys --with-colons "$llvm_key" \
+            | awk -F: '$1 == "fpr" { print $10; exit }')"
+          test "$fingerprint" = "6084F3CF814B57C1CF12EFD515CF4D18AF4F7421"
+          gpg --batch --yes --dearmor --output "$llvm_keyring" "$llvm_key"
+          sudo install -m 0644 "$llvm_keyring" /usr/share/keyrings/apt.llvm.org.gpg
+          printf '%s\n' \
+            'deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main' \
+            | sudo tee /etc/apt/sources.list.d/llvm-18.list >/dev/null
           sudo apt-get update
           sudo apt-get install --no-install-recommends \
             clang-18 libc++-18-dev libc++abi-18-dev ninja-build
+          clang_version="$(clang-18 --version)"
+          grep -F 'clang version 18.1.8' <<<"$clang_version"
       - name: Install pinned native build tools
         run: python -m pip install -r .github/native-build-requirements.txt
       - name: Classify the exact native gate
@@ -73,8 +90,8 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.conan2/p
-          key: linux-x64-conan-clang18-${{ hashFiles('conanfile.py', 'native/profiles/linux-x64', '.github/native-build-requirements.txt') }}
-          restore-keys: linux-x64-conan-clang18-
+          key: linux-x64-jammy-conan-clang18-${{ hashFiles('conanfile.py', 'native/profiles/linux-x64', '.github/native-build-requirements.txt') }}
+          restore-keys: linux-x64-jammy-conan-clang18-
       - name: Resolve Conan dependencies
         shell: bash
         run: |
@@ -130,12 +147,28 @@ jobs:
           set -euo pipefail
           stage="$PWD/stage/linux-x64"
           plugin="$stage/plugins/endstone_dynamic_properties_api.so"
+          bridge="$(find "$stage/python" -maxdepth 1 \
+            -name '_endstone_dynamic_properties_live*.so' -type f -print -quit)"
           test -s "$plugin"
+          test -n "$bridge"
+          test -s "$bridge"
           file "$plugin" | grep -F "ELF 64-bit LSB shared object, x86-64"
           if readelf -d "$plugin" | grep -E '(RPATH|RUNPATH)'; then
             echo "Installed plugin contains a forbidden RPATH/RUNPATH" >&2
             exit 1
           fi
+          for binary in "$plugin" "$bridge"; do
+            maximum_glibc="$(readelf --version-info "$binary" \
+              | grep -oE 'GLIBC_[0-9]+(\.[0-9]+)+' \
+              | sed 's/^GLIBC_//' | sort -Vu | tail -n 1)"
+            test -n "$maximum_glibc"
+            printf '%s highest imported glibc symbol: GLIBC_%s\n' \
+              "$(basename "$binary")" "$maximum_glibc"
+            if dpkg --compare-versions "$maximum_glibc" gt '2.35'; then
+              echo "Release binary exceeds the Ubuntu 22.04 GLIBC_2.35 ceiling" >&2
+              exit 1
+            fi
+          done
           wheel_count="$(find "$stage/plugins" -maxdepth 1 -name '*.whl' -type f | wc -l)"
           test "$wheel_count" -eq 1
           mkdir -p "$stage/evidence"

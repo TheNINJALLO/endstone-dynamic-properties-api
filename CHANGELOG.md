@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Moved Linux release builds to the Ubuntu 22.04 compatibility floor, added a
+  `GLIBC_2.35` import ceiling for both the plugin and tester bridge, and encoded
+  that baseline in release filenames and manifests.
 - Renamed the installed Linux plugin to the stable
   `endstone_dynamic_properties_api.so` entry-point name.
 - Added canonical versioned Linux release assets: a compatibility-qualified

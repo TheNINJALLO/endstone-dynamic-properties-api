@@ -55,10 +55,20 @@ python tools/activate_verified_manifest.py \
 ## 6. Build through Conan
 
 The checked-in Linux profile pins the Clang 18/libc++ toolchain required by
-Endstone v0.11.6. On Ubuntu 24.04, install it and then register Endstone's
-source-recipe remote:
+Endstone v0.11.6. Release binaries must be compiled on Ubuntu 22.04 so they do
+not import glibc symbols newer than the supported `GLIBC_2.35` floor. Install
+LLVM 18 from LLVM's Jammy repository, then register Endstone's source-recipe
+remote:
 
 ```bash
+curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key \
+  -o /tmp/llvm-snapshot.gpg.key
+gpg --dearmor --output /tmp/apt.llvm.org.gpg \
+  /tmp/llvm-snapshot.gpg.key
+sudo install -m 0644 /tmp/apt.llvm.org.gpg \
+  /usr/share/keyrings/apt.llvm.org.gpg
+echo 'deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/jammy/ llvm-toolchain-jammy-18 main' \
+  | sudo tee /etc/apt/sources.list.d/llvm-18.list
 sudo apt-get update
 sudo apt-get install --no-install-recommends \
   clang-18 libc++-18-dev libc++abi-18-dev ninja-build
@@ -113,8 +123,10 @@ into `stage/exact/plugins/`.
 ## Hosted Linux compilation
 
 `.github/workflows/linux-native.yml` repeats the Conan, CMake, CTest, install,
-ELF inspection, and tester-wheel build on Ubuntu x86-64 with CPython 3.14. It
-classifies the native proof before configuring CMake:
+ELF inspection, and tester-wheel build on Ubuntu 22.04 x86-64 with CPython
+3.14. It rejects a plugin or tester bridge whose highest imported glibc symbol
+exceeds `GLIBC_2.35`, then classifies the native proof before configuring
+CMake:
 
 - incomplete proof builds `linux-native-gate-closed` for compilation and
   packaging validation only; the plugin refuses service registration;
@@ -129,10 +141,10 @@ for an installable API.
 
 The tagged-release workflow calls the same hosted Linux build and publishes:
 
-- `endstone_dynamic_properties_api-<version>-bds-<package>-endstone-<version>-linux-x86_64-<mode>.so`;
+- `endstone_dynamic_properties_api-<version>-bds-<package>-endstone-<version>-linux-x86_64-glibc-2.35-<mode>.so`;
 - the standard
   `endstone_dynamic_properties_tester-<python-version>-cp314-cp314-linux_x86_64.whl`;
-- `endstone-dynamic-properties-api-<compatibility>-<mode>.zip`, containing both
+- `endstone-dynamic-properties-api-<compatibility>-glibc-2.35-<mode>.zip`, containing both
   under `plugins/` with `RELEASE_MANIFEST.json`, mode evidence, and checksums.
 
 Inside the ZIP the installed entry point always uses the stable

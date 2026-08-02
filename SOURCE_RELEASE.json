@@ -6,6 +6,7 @@
   "native_plugin_included": true,
   "native_plugin_operational": false,
   "native_artifact_mode": "gate-closed",
+  "linux_glibc_ceiling": "2.35",
   "tester_wheel_included": true,
   "service": "endstone:dynamic-properties:v1",
   "adapter_family": "Minecraft Bedrock 26.30",

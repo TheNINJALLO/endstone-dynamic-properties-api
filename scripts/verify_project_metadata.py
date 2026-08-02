@@ -238,7 +238,9 @@ def main() -> int:
     if not all(f'"{kind}"' in tester_targets for kind in target_kinds):
         failures.append("tester target template must represent all 12 target families")
     required_linux_workflow_markers = (
-        "ubuntu-24.04",
+        "ubuntu-22.04",
+        "llvm-toolchain-jammy-18",
+        "GLIBC_2.35 ceiling",
         'python-version: "3.14"',
         "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON",
         "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_LIVE_PYTHON=ON",
@@ -265,6 +267,7 @@ def main() -> int:
             'TESTER_DISTRIBUTION = "endstone_dynamic_properties_tester"',
             'RELEASE_PLATFORM = "linux-x86_64"',
             'PYTHON_ABI_TAG = "cp314-cp314-linux_x86_64"',
+            'source_release.get("linux_glibc_ceiling", "")',
             'choices=("gate-closed", "verified")',
         )
     ):
@@ -282,6 +285,8 @@ def main() -> int:
         failures.append("gate-closed native plugin must declare operational=false")
     if source.get("native_artifact_mode") != "gate-closed":
         failures.append("blocked alpha native artifact mode must be gate-closed")
+    if source.get("linux_glibc_ceiling") != "2.35":
+        failures.append("Linux native releases must enforce a GLIBC_2.35 ceiling")
     if source.get("tester_wheel_included") is not True:
         failures.append("native validation release must include the bound tester wheel")
     if source.get("supported_bds_packages") != ["1.26.33.1"]:

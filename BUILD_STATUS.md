@@ -25,8 +25,10 @@ Version: **0.1.0-alpha.2**
   inventory, successful-edit checks, and bounded external-mutation capture are
   implemented.
 - Hosted Linux x86-64 `.so` plus CPython 3.14 tester-wheel compilation is
-  configured. Until native proof activation, its artifact is visibly marked
-  gate-closed and is not deployable as a working service.
+  configured on the Ubuntu 22.04 / GLIBC 2.35 compatibility floor. Packaging
+  rejects newer glibc imports in either native binary. Until native proof
+  activation, its artifact is visibly marked gate-closed and is not deployable
+  as a working service.
 
 ## Exact native bridge
 

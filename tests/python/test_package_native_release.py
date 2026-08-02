@@ -17,7 +17,7 @@ WHEEL_NAME = (
 )
 RELEASE_SUFFIX = (
     "0.1.0-alpha.2-bds-1.26.33.1-endstone-0.11.6-"
-    "linux-x86_64-gate-closed"
+    "linux-x86_64-glibc-2.35-gate-closed"
 )
 
 
@@ -25,7 +25,9 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def make_stage(root: Path) -> tuple[Path, Path]:
+def make_stage(
+    root: Path, *, plugin_glibc: str = "2.2.5", bridge_glibc: str = "2.2.5"
+) -> tuple[Path, Path]:
     stage = root / "stage"
     plugins = stage / "plugins"
     evidence = stage / "evidence"
@@ -33,14 +35,14 @@ def make_stage(root: Path) -> tuple[Path, Path]:
     evidence.mkdir(parents=True)
     elf_header = b"\x7fELF\x02\x01" + (b"\x00" * 12) + b"\x3e\x00"
     (plugins / "endstone_dynamic_properties_api.so").write_bytes(
-        elf_header + b"canonical-plugin"
+        elf_header + b"canonical-plugin\x00GLIBC_" + plugin_glibc.encode("ascii")
     )
     wheel = plugins / WHEEL_NAME
     with ZipFile(wheel, "w") as archive:
         archive.writestr(
             "endstone_dynamic_properties_tester/"
             "_endstone_dynamic_properties_live.cpython-314-x86_64-linux-gnu.so",
-            elf_header + b"bridge",
+            elf_header + b"bridge\x00GLIBC_" + bridge_glibc.encode("ascii"),
         )
         archive.writestr(
             "endstone_dynamic_properties_tester-0.1.0a2.dist-info/WHEEL",
@@ -109,6 +111,11 @@ def test_packager_creates_named_plugin_wheel_and_deterministic_bundle(
         assert manifest["mode"] == "gate-closed"
         assert manifest["operational"] is False
         assert manifest["python_abi"] == "cp314"
+        assert manifest["glibc"] == {
+            "ceiling": "2.35",
+            "plugin_minimum": "2.2.5",
+            "tester_bridge_minimum": "2.2.5",
+        }
         assert manifest["plugin"] == "plugins/endstone_dynamic_properties_api.so"
         assert manifest["tester_wheel"] == f"plugins/{WHEEL_NAME}"
 
@@ -122,3 +129,24 @@ def test_packager_rejects_nonmatching_tester_wheel(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert "Matching tester wheel must be" in result.stderr
+
+
+def test_packager_rejects_plugin_above_glibc_ceiling(tmp_path: Path) -> None:
+    stage, wheel = make_stage(tmp_path, plugin_glibc="2.38")
+
+    result = run_packager(stage, wheel, tmp_path / "output")
+
+    assert result.returncode != 0
+    assert "requires GLIBC_2.38" in result.stderr
+    assert "release ceiling GLIBC_2.35" in result.stderr
+
+
+def test_packager_rejects_tester_bridge_above_glibc_ceiling(
+    tmp_path: Path,
+) -> None:
+    stage, wheel = make_stage(tmp_path, bridge_glibc="2.38")
+
+    result = run_packager(stage, wheel, tmp_path / "output")
+
+    assert result.returncode != 0
+    assert "Tester wheel bridge requires GLIBC_2.38" in result.stderr

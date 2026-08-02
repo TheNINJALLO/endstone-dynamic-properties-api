@@ -11,7 +11,7 @@ Working-tree validation date: `2026-08-02`
 - Rejection of incomplete native activation.
 - Strict public/tool manifest-verifier parity, including omitted proof sections and duplicate symbols.
 - Strict stage-probe rejection of empty result sets and non-hexadecimal evidence hashes.
-- Python 3.11 tests: `118/118` passed.
+- Python 3.11 tests: `120/120` passed.
 - MSVC 19.44 C++20 Release compilation with warnings as errors.
 - Release CTest: `2/2` passed.
 - Clean installed-SDK `find_package()` consumer build and execution.
@@ -31,6 +31,9 @@ Working-tree validation date: `2026-08-02`
 - All-target configuration validation, existing-property inventory, successful
   edit/readback, external-event drain/report, and Linux workflow gate-mode
   regression tests.
+- Native release packaging rejects either the plugin or tester bridge when its
+  imported glibc symbols exceed `GLIBC_2.35`; the earlier Ubuntu 24.04 artifact
+  was confirmed rejected because it imports `GLIBC_2.38`.
 
 ## Configured CI coverage
 

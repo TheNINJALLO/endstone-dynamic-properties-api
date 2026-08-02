@@ -10,7 +10,9 @@ WORKFLOW = ROOT / ".github" / "workflows" / "linux-native.yml"
 def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     source = WORKFLOW.read_text(encoding="utf-8")
 
-    assert "runs-on: ubuntu-24.04" in source
+    assert "runs-on: ubuntu-22.04" in source
+    assert "llvm-toolchain-jammy-18" in source
+    assert "6084F3CF814B57C1CF12EFD515CF4D18AF4F7421" in source
     assert 'python-version: "3.14"' in source
     assert "-DENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON" in source
     assert "-DENDSTONE_DYNAMIC_PROPERTIES_BUILD_LIVE_PYTHON=ON" in source
@@ -19,6 +21,8 @@ def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     assert "scripts/package_native_release.py" in source
     assert "inputs.source_date_epoch || '315532800'" in source
     assert "ELF 64-bit LSB shared object, x86-64" in source
+    assert "dpkg --compare-versions" in source
+    assert "GLIBC_2.35 ceiling" in source
 
 
 def test_linux_workflow_cannot_label_an_incomplete_gate_verified() -> None:

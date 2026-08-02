@@ -22,6 +22,7 @@ BRIDGE_MEMBER = (
     "endstone_dynamic_properties_tester/"
     "_endstone_dynamic_properties_live.cpython-314-x86_64-linux-gnu.so"
 )
+GLIBC_VERSION = re.compile(rb"GLIBC_([0-9]+(?:\.[0-9]+)+)")
 
 
 def sha256(path: Path) -> str:
@@ -43,7 +44,18 @@ def python_version(release: str) -> str:
     return base if stage is None else f"{base}{markers[stage]}{serial}"
 
 
-def validate_elf_x86_64(data: bytes, description: str) -> None:
+def parse_version(value: str) -> tuple[int, ...]:
+    if re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", value) is None:
+        raise SystemExit(f"Invalid dotted numeric version: {value!r}")
+    parts = [int(part) for part in value.split(".")]
+    while len(parts) > 1 and parts[-1] == 0:
+        parts.pop()
+    return tuple(parts)
+
+
+def validate_elf_x86_64(
+    data: bytes, description: str, glibc_ceiling: str
+) -> str:
     if (
         len(data) < 20
         or data[:4] != b"\x7fELF"
@@ -52,16 +64,30 @@ def validate_elf_x86_64(data: bytes, description: str) -> None:
         or int.from_bytes(data[18:20], "little") != 62
     ):
         raise SystemExit(f"{description} must be little-endian ELF64 x86-64")
+    versions = {
+        match.group(1).decode("ascii") for match in GLIBC_VERSION.finditer(data)
+    }
+    if not versions:
+        raise SystemExit(f"{description} does not declare any imported GLIBC versions")
+    required = max(versions, key=parse_version)
+    if parse_version(required) > parse_version(glibc_ceiling):
+        raise SystemExit(
+            f"{description} requires GLIBC_{required}, exceeding the "
+            f"release ceiling GLIBC_{glibc_ceiling}"
+        )
+    return required
 
 
-def validate_tester_wheel(wheel: Path) -> None:
+def validate_tester_wheel(wheel: Path, glibc_ceiling: str) -> str:
     with ZipFile(wheel) as archive:
         names = archive.namelist()
         if names.count(BRIDGE_MEMBER) != 1:
             raise SystemExit(
                 f"Tester wheel must contain exactly one bound bridge {BRIDGE_MEMBER!r}"
             )
-        validate_elf_x86_64(archive.read(BRIDGE_MEMBER), "Tester wheel bridge")
+        bridge_glibc = validate_elf_x86_64(
+            archive.read(BRIDGE_MEMBER), "Tester wheel bridge", glibc_ceiling
+        )
         wheel_metadata = [name for name in names if name.endswith(".dist-info/WHEEL")]
         if len(wheel_metadata) != 1:
             raise SystemExit("Tester wheel must contain exactly one WHEEL metadata file")
@@ -70,6 +96,7 @@ def validate_tester_wheel(wheel: Path) -> None:
             raise SystemExit("Tester wheel containing the bridge must not be pure Python")
         if f"Tag: {PYTHON_ABI_TAG}" not in metadata:
             raise SystemExit(f"Tester wheel must declare tag {PYTHON_ABI_TAG!r}")
+    return bridge_glibc
 
 
 def zip_timestamp() -> tuple[int, int, int, int, int, int]:
@@ -128,12 +155,16 @@ def main() -> int:
         raise SystemExit("Native releases require exactly one Endstone tag")
     bds_package = str(packages[0])
     endstone_version = str(endstone_tags[0]).removeprefix("v")
+    glibc_ceiling = str(source_release.get("linux_glibc_ceiling", ""))
+    parse_version(glibc_ceiling)
 
     stage = args.stage_dir.resolve()
     plugin = stage / "plugins" / INSTALLED_PLUGIN_NAME
     if not plugin.is_file() or plugin.stat().st_size == 0 or plugin.is_symlink():
         raise SystemExit(f"Canonical staged plugin is missing or invalid: {plugin}")
-    validate_elf_x86_64(plugin.read_bytes()[:20], "Canonical staged plugin")
+    plugin_glibc = validate_elf_x86_64(
+        plugin.read_bytes(), "Canonical staged plugin", glibc_ceiling
+    )
 
     wheel = args.wheel.resolve()
     expected_wheel = (
@@ -143,7 +174,7 @@ def main() -> int:
         raise SystemExit(
             f"Matching tester wheel must be {expected_wheel!r}; got {wheel.name!r}"
         )
-    validate_tester_wheel(wheel)
+    bridge_glibc = validate_tester_wheel(wheel, glibc_ceiling)
 
     build_mode = stage / "evidence" / "BUILD_MODE.txt"
     if not build_mode.is_file():
@@ -157,7 +188,7 @@ def main() -> int:
 
     release_suffix = (
         f"{release}-bds-{bds_package}-endstone-{endstone_version}-"
-        f"{RELEASE_PLATFORM}-{args.mode}"
+        f"{RELEASE_PLATFORM}-glibc-{glibc_ceiling}-{args.mode}"
     )
     plugin_asset_name = f"endstone_dynamic_properties_api-{release_suffix}.so"
     bundle_stem = f"endstone-dynamic-properties-api-{release_suffix}"
@@ -202,6 +233,11 @@ def main() -> int:
             "bds_runtime": source_release["supported_bds_runtime"][0],
             "endstone": endstone_version,
             "python_abi": "cp314",
+            "glibc": {
+                "ceiling": glibc_ceiling,
+                "plugin_minimum": plugin_glibc,
+                "tester_bridge_minimum": bridge_glibc,
+            },
             "plugin": f"plugins/{INSTALLED_PLUGIN_NAME}",
             "tester_wheel": f"plugins/{expected_wheel}",
             "sha256": checksums,
