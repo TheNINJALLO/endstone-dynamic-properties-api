@@ -210,6 +210,8 @@ def main() -> int:
         )
     if 'check_min_cppstd(self, "20")' not in conanfile:
         failures.append("Conan dependency resolution must require C++20")
+    if 'self.options["cpptrace"].unwind = "libunwind"' not in conanfile:
+        failures.append("Linux Conan builds must select cpptrace's libunwind backend")
     if "version = TESTER_VERSION" not in tester_plugin:
         failures.append("tester plugin version must use the report package version")
     required_live_exports = (
