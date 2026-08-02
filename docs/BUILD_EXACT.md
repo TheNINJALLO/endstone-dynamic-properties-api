@@ -38,7 +38,9 @@ does not match the pinned manifest. It emits only matching symbol candidates
 and ELF/tool metadata; it does not copy the executable, disassembly, full symbol
 table, world data, or player records. Keep this report out of source control and
 return it to the private native review workspace. Candidate discovery alone does
-not prove a signature, ABI contract, or behavior.
+not prove a signature, ABI contract, or behavior. The ELF scan uses only the
+Python standard library; `c++filt` is optional and exact mangled names are kept
+when it is unavailable in a minimal game-server container.
 
 ## 2. Complete symbol and contract review
 
