@@ -11,7 +11,7 @@ Working-tree validation date: `2026-08-02`
 - Rejection of incomplete native activation.
 - Strict public/tool manifest-verifier parity, including omitted proof sections and duplicate symbols.
 - Strict stage-probe rejection of empty result sets and non-hexadecimal evidence hashes.
-- Python 3.11 tests: `120/120` passed.
+- Python tests: `139/139` passed.
 - MSVC 19.44 C++20 Release compilation with warnings as errors.
 - Release CTest: `2/2` passed.
 - Clean installed-SDK `find_package()` consumer build and execution.
@@ -45,6 +45,13 @@ x86-64 Endstone `.so` plus matching CPython 3.14 tester wheel.
 
 These hosted jobs must pass on the exact commit before it is tagged. Earlier bundle results are not treated as validation of the modified working tree.
 
+The exact alpha.3 head also passed the Ubuntu 22.04 disposable-server gate on
+the official BDS `1.26.33.1` executable. Four integrity-sealed reports cover
+existing collection inventory, a 19-check world CRUD/value/revision suite,
+native external set/remove/clear interception with cancellation, and a clean
+two-process persistence round trip. The resulting plugin and tester bridge
+also passed the `GLIBC_2.35` import ceiling.
+
 ## Portable behavior covered
 
 - All 12 target kinds and inventory-section validation.
@@ -73,8 +80,9 @@ install-layout bundle. The verified complete-control gate remains closed.
 The official Windows and Linux executable SHA-256/size identities are recorded
 and enforced by both manifest verification and the compiled runtime gate. The
 experimental adapter additionally binds the exact Linux world/actor
-dynamic-property core and mutation-hook paths. Live stage results are still
-required before those paths can be marked verified.
+dynamic-property core and mutation-hook paths. Its disposable Linux world and
+hook stage now passes; this is experimental target-scoped evidence and does not
+open the all-target complete-control gate.
 
 Still required independently for Windows and Linux BDS package `1.26.33.1`:
 
@@ -82,11 +90,8 @@ Still required independently for Windows and Linux BDS package `1.26.33.1`:
 - signature and behavior review for every verified-release symbol;
 - offline-player and stored-entity storage contract review;
 - supported block dynamic-property contract review;
-- live external set/remove/clear hook review;
 - reviewed `src/verified_bds_26_30_adapter.cpp` source and SHA-256;
-- CPython 3.14 compilation/import validation of the live tester bridge and its
-  platform wheel in the exact staged server package;
-- complete disposable-world stage probe with retained evidence.
+- complete all-target disposable-world stage probe with retained evidence.
 
 The plugin exposes `complete_control=false` until all proof gates pass together;
 unimplemented target capabilities remain false.

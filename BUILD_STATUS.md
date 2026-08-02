@@ -15,7 +15,8 @@ Version: **0.1.0-alpha.3**
 - Commit-time validation is serialized across shared-adapter services; listener failures are isolated and audited.
 - GCC, Clang, and sanitizer hosted jobs: configured and required to pass on `main` before tagging.
 - MSVC 19.44 Debug and Release builds with warnings as errors: validated.
-- C++ and Python tests: passing locally (MSVC Debug/Release and Python 3.11).
+- C++ and Python tests: passing locally (MSVC Release CTest `2/2` and Python
+  `139/139`) and across the hosted compiler/runtime matrix.
 - Installed CMake package consumer (`EndstoneDynamicProperties::core`): passing.
 - Python wheel and source-distribution build metadata: configured.
 - GitHub CI and draft release workflows: configured.
@@ -43,9 +44,11 @@ Version: **0.1.0-alpha.3**
 - Stored-entity storage contract: not yet behavior-verified.
 - Block dynamic-property contract: not yet behavior-verified.
 - External set/remove/clear hooks: implemented experimentally with funchook;
-  live behavior verification is required before verified status.
+  a raw-entry-point live probe verifies before/after interception, cancellation,
+  absence of the cancelled value, and cleanup on the exact Linux server.
 - Reviewed native bridge source: absent.
-- Complete stage probe: not passed.
+- Exact Linux experimental world/hook/persistence stage: passed in a disposable
+  two-boot BDS run; complete all-target stage probe: not passed.
 - Experimental live service registration: enabled for world, online-player,
   and loaded-entity targets on exact identity match.
 - Live CRUD/list/revision/bulk/transfer/migration/import/rollback: implemented

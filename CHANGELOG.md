@@ -12,6 +12,9 @@
   rollback transactions, and BDS persistence-lifecycle handoff.
 - Added cancellable external set/remove/clear interception for mapped live
   targets and exposed truthful partial capabilities to the tester.
+- Added an operator-only raw native hook probe plus an automated two-boot
+  official-BDS acceptance gate covering live world CRUD, interception,
+  cancellation, cleanup, and restart persistence.
 - Added built-in ELF evidence and dynamic-property xref analysis tools for the
   stripped official Linux server.
 
