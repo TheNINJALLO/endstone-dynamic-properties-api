@@ -71,7 +71,7 @@ echo 'deb [signed-by=/usr/share/keyrings/apt.llvm.org.gpg] https://apt.llvm.org/
   | sudo tee /etc/apt/sources.list.d/llvm-18.list
 sudo apt-get update
 sudo apt-get install --no-install-recommends \
-  clang-18 libc++-18-dev libc++abi-18-dev ninja-build
+  clang-18 clang-tools-18 libc++-18-dev libc++abi-18-dev ninja-build
 conan remote add endstone https://conan.cloudsmith.io/endstone/conan/ \
   --index 0 --force
 ```

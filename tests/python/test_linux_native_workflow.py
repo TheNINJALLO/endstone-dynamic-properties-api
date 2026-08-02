@@ -13,6 +13,8 @@ def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     assert "runs-on: ubuntu-22.04" in source
     assert "llvm-toolchain-jammy-18" in source
     assert "6084F3CF814B57C1CF12EFD515CF4D18AF4F7421" in source
+    assert "clang-tools-18" in source
+    assert "command -v clang-scan-deps-18" in source
     assert 'python-version: "3.14"' in source
     assert "-DENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON" in source
     assert "-DENDSTONE_DYNAMIC_PROPERTIES_BUILD_LIVE_PYTHON=ON" in source

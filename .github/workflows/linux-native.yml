@@ -65,9 +65,10 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/llvm-18.list >/dev/null
           sudo apt-get update
           sudo apt-get install --no-install-recommends \
-            clang-18 libc++-18-dev libc++abi-18-dev ninja-build
+            clang-18 clang-tools-18 libc++-18-dev libc++abi-18-dev ninja-build
           clang_version="$(clang-18 --version)"
           grep -F 'clang version 18.1.8' <<<"$clang_version"
+          command -v clang-scan-deps-18
       - name: Install pinned native build tools
         run: python -m pip install -r .github/native-build-requirements.txt
       - name: Classify the exact native gate

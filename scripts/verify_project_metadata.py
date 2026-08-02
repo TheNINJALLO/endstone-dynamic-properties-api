@@ -242,6 +242,7 @@ def main() -> int:
     required_linux_workflow_markers = (
         "ubuntu-22.04",
         "llvm-toolchain-jammy-18",
+        "clang-tools-18",
         "GLIBC_2.35 ceiling",
         'python-version: "3.14"',
         "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON",
