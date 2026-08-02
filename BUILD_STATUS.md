@@ -18,7 +18,7 @@ Version: **0.1.0-alpha.2**
 - C++ and Python tests: passing locally (MSVC Debug/Release and Python 3.11).
 - Installed CMake package consumer (`EndstoneDynamicProperties::core`): passing.
 - Python wheel and source-distribution build metadata: configured.
-- GitHub CI and draft portable-release workflows: configured.
+- GitHub CI and draft release workflows: configured.
 - Operator-only CPython 3.14 live tester, atomic reports, guarded cleanup, and
   exact-stage wheel packager: implemented.
 - Configured live acceptance targets cover all 12 target families; read-only
@@ -47,6 +47,7 @@ Version: **0.1.0-alpha.2**
 
 This alpha is a complete portable API/reference and activation package. It is
 not yet an installable working native server plugin. The portable release
-workflow deliberately publishes no native DLL/SO; the separate native
-readiness workflow emits a non-deployable gate-closed `.so` only to validate
-the exact Linux compilation and packaging graph.
+assets now include a non-deployable, versioned gate-closed Linux `.so`, its
+ABI-matched CPython 3.14 tester wheel, and an install-layout ZIP containing
+both. These assets validate the exact compilation and packaging graph and do
+not imply that the service can register.

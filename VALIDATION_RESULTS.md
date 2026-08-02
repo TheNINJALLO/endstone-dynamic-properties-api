@@ -11,7 +11,7 @@ Working-tree validation date: `2026-08-02`
 - Rejection of incomplete native activation.
 - Strict public/tool manifest-verifier parity, including omitted proof sections and duplicate symbols.
 - Strict stage-probe rejection of empty result sets and non-hexadecimal evidence hashes.
-- Python 3.11 tests: `115/115` passed.
+- Python 3.11 tests: `118/118` passed.
 - MSVC 19.44 C++20 Release compilation with warnings as errors.
 - Release CTest: `2/2` passed.
 - Clean installed-SDK `find_package()` consumer build and execution.
@@ -63,8 +63,9 @@ These hosted jobs must pass on the exact commit before it is tagged. Earlier bun
 ## Native status
 
 The exact BDS bridge is not activated and no deployable native DLL/SO is
-produced. The hosted native workflow may emit a visibly marked gate-closed ELF
-for build-graph validation; it refuses service registration.
+produced. Hosted CI and tagged releases emit a visibly marked gate-closed ELF,
+its ABI-matched tester wheel, and a combined install-layout bundle for
+build-graph validation; the plugin refuses service registration.
 
 The official Windows and Linux executable SHA-256/size identities are recorded
 and enforced by both manifest verification and the compiled closed gate. They

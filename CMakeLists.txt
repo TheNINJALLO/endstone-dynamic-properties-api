@@ -20,7 +20,6 @@ option(ENDSTONE_DYNAMIC_PROPERTIES_WARNINGS_AS_ERRORS
        "Treat project warnings as errors" ON)
 set(ENDSTONE_BDS_BUILD "1.26.33" CACHE STRING "Exact Endstone runtime BDS build")
 set(ENDSTONE_BDS_PACKAGE "1.26.33.1" CACHE STRING "Exact official BDS package version")
-string(REPLACE "." "_" ENDSTONE_BDS_BUILD_FILE "${ENDSTONE_BDS_BUILD}")
 
 set(ENDSTONE_DYNAMIC_PROPERTIES_RELEASE_VERSION "${PROJECT_VERSION}")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SOURCE_RELEASE.json")
@@ -178,7 +177,7 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
     endstone_add_plugin(dynamic_properties_api src/plugin.cpp)
     set_target_properties(dynamic_properties_api PROPERTIES
         PREFIX ""
-        OUTPUT_NAME "endstone_dynamic_properties_bds_${ENDSTONE_BDS_BUILD_FILE}"
+        OUTPUT_NAME "endstone_dynamic_properties_api"
         BUILD_RPATH_USE_ORIGIN ON
         INSTALL_RPATH ""
         INSTALL_RPATH_USE_LINK_PATH FALSE

@@ -124,3 +124,20 @@ classifies the native proof before configuring CMake:
 Every staged file is covered by `evidence/SHA256SUMS.txt`, and
 `evidence/BUILD_MODE.txt` prevents a closed-gate artifact from being mistaken
 for an installable API.
+
+## Native release assets
+
+The tagged-release workflow calls the same hosted Linux build and publishes:
+
+- `endstone_dynamic_properties_api-<version>-bds-<package>-endstone-<version>-linux-x86_64-<mode>.so`;
+- the standard
+  `endstone_dynamic_properties_tester-<python-version>-cp314-cp314-linux_x86_64.whl`;
+- `endstone-dynamic-properties-api-<compatibility>-<mode>.zip`, containing both
+  under `plugins/` with `RELEASE_MANIFEST.json`, mode evidence, and checksums.
+
+Inside the ZIP the installed entry point always uses the stable
+`plugins/endstone_dynamic_properties_api.so` name. The wheel contains exactly
+one package-local CPython 3.14 Linux bridge built from the same CMake stage.
+The native release packager independently checks both ELF64 x86-64 boundaries,
+the wheel ABI tag, build mode, version, and compatibility metadata before it
+creates the release assets.

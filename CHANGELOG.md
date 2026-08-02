@@ -2,7 +2,14 @@
 
 ## Unreleased
 
-No changes yet.
+### Changed
+
+- Renamed the installed Linux plugin to the stable
+  `endstone_dynamic_properties_api.so` entry-point name.
+- Added canonical versioned Linux release assets: a compatibility-qualified
+  `.so`, its CPython 3.14 tester wheel, and a deterministic install-layout ZIP
+  containing both. Gate-closed assets remain explicitly named as such.
+- Added the Linux plugin/tester build to the guarded draft-release workflow.
 
 ## 0.1.0-alpha.2 - 2026-07-30
 

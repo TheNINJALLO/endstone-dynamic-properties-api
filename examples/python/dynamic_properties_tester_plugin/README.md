@@ -11,7 +11,10 @@ wheel so server plugins and the test harness cannot accidentally resolve a
 differently versioned API installation.
 
 Install the native plugin and its matching tester wheel in the server's
-`plugins/` directory. Then use these commands as an operator:
+`plugins/` directory. Tagged releases provide a compatibility-qualified ZIP
+with both files already under `plugins/`; the plugin inside that bundle is
+named `endstone_dynamic_properties_api.so`. Then use these commands as an
+operator:
 
 ```text
 /dptest status

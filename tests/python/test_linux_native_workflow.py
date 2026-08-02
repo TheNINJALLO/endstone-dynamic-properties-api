@@ -15,7 +15,8 @@ def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     assert "-DENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON" in source
     assert "-DENDSTONE_DYNAMIC_PROPERTIES_BUILD_LIVE_PYTHON=ON" in source
     assert "scripts/build_test_wheel.py" in source
-    assert "endstone_dynamic_properties_bds_1_26_33.so" in source
+    assert "endstone_dynamic_properties_api.so" in source
+    assert "scripts/package_native_release.py" in source
     assert "ELF 64-bit LSB shared object, x86-64" in source
 
 
@@ -30,3 +31,13 @@ def test_linux_workflow_cannot_label_an_incomplete_gate_verified() -> None:
     assert "python tools/verify_fail_closed.py" in source
     assert "GATE CLOSED:" in source
     assert "linux-native-${{ steps.gate.outputs.mode }}" in source
+
+
+def test_draft_release_includes_the_native_plugin_and_bound_wheel() -> None:
+    source = (ROOT / ".github" / "workflows" / "release.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "uses: ./.github/workflows/linux-native.yml" in source
+    assert "release_assets_only: true" in source
+    assert "portable-sdk, linux-native" in source

@@ -24,7 +24,11 @@ Supported public values are `bool`, finite `double`, UTF-8 `string`, and `Vector
 
 ## Current release status
 
-> **Reference/core alpha:** this source does not yet produce a working Endstone server plugin. It provides the portable C++ SDK, pure-Python reference implementation, strict native activation gate, and the tooling needed to complete platform verification.
+> **Native-validation alpha:** this source produces a Linux Endstone plugin and
+> its ABI-matched tester wheel, but the plugin is gate-closed and is not yet a
+> working server API. It also provides the portable C++ SDK, pure-Python
+> reference implementation, strict native activation gate, and the tooling
+> needed to complete platform verification.
 
 The **portable C++ API, Python reference package, in-memory complete-control adapter, validation, access isolation, events, audits, export/import, migrations, optimistic revisions, and atomic rollback transactions are implemented and tested**.
 
@@ -230,13 +234,19 @@ python tools/activate_verified_manifest.py \
 
 The `Linux native plugin and live tester` GitHub workflow compiles the actual
 Linux x86-64 Endstone entry point
-`endstone_dynamic_properties_bds_1_26_33.so` and its matching CPython 3.14
+`endstone_dynamic_properties_api.so` and its matching CPython 3.14
 tester wheel. While the checked-in native proof is incomplete, the uploaded
 artifact is explicitly named `linux-native-gate-closed`, contains a warning,
 and refuses to register the service. After the reviewed bridge, manifest, and
 stage report pass the same verifier, the unchanged workflow switches to a
 `linux-native-verified` artifact. A successful compile never opens the runtime
 gate by itself.
+
+Tagged releases also contain a versioned, platform- and compatibility-named
+`.so`, the standard PEP 427 tester wheel, and one versioned ZIP containing both
+files under their install-ready names. Gate-closed filenames remain visibly
+marked `gate-closed`; the release workflow removes that mode only after the
+same native verifier reports a complete proof.
 
 ## Repository map
 

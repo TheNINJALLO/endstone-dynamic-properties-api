@@ -4,6 +4,21 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      checkout_ref:
+        description: Immutable commit to build for a release caller
+        required: false
+        type: string
+      release_assets_only:
+        description: Upload only flattened GitHub Release assets
+        required: false
+        default: false
+        type: boolean
+      source_date_epoch:
+        description: Reproducible archive timestamp from the release commit
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -17,9 +32,12 @@ jobs:
     name: Build Linux x86-64 .so and CPython 3.14 tester
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    env:
+      SOURCE_DATE_EPOCH: ${{ inputs.source_date_epoch }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          ref: ${{ inputs.checkout_ref || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
@@ -111,7 +129,7 @@ jobs:
         run: |
           set -euo pipefail
           stage="$PWD/stage/linux-x64"
-          plugin="$stage/plugins/endstone_dynamic_properties_bds_1_26_33.so"
+          plugin="$stage/plugins/endstone_dynamic_properties_api.so"
           test -s "$plugin"
           file "$plugin" | grep -F "ELF 64-bit LSB shared object, x86-64"
           if readelf -d "$plugin" | grep -E '(RPATH|RUNPATH)'; then
@@ -134,11 +152,31 @@ jobs:
           find "$stage" -type f ! -path '*/evidence/SHA256SUMS.txt' -printf '%P\n' | sort \
             | while IFS= read -r path; do sha256sum "$stage/$path"; done \
             > "$stage/evidence/SHA256SUMS.txt"
+      - name: Create canonical native release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel="$(find "$PWD/stage/linux-x64/plugins" -maxdepth 1 \
+            -name '*.whl' -type f -print -quit)"
+          python scripts/package_native_release.py \
+            --stage-dir "$PWD/stage/linux-x64" \
+            --wheel "$wheel" \
+            --output-dir "$PWD/dist/release-linux-x64" \
+            --mode "${{ steps.gate.outputs.mode }}"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !inputs.release_assets_only }}
         with:
           name: linux-native-${{ steps.gate.outputs.mode }}
           path: |
             stage/linux-x64
             dist/linux-x64/*.whl
+            dist/release-linux-x64/*
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ inputs.release_assets_only }}
+        with:
+          name: release-linux-native
+          path: dist/release-linux-x64/*
           if-no-files-found: error
           retention-days: 14

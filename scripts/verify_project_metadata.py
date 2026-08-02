@@ -186,6 +186,12 @@ def main() -> int:
     linux_workflow = (
         ROOT / ".github/workflows/linux-native.yml"
     ).read_text(encoding="utf-8")
+    release_workflow = (ROOT / ".github/workflows/release.yml").read_text(
+        encoding="utf-8"
+    )
+    native_packager = (ROOT / "scripts/package_native_release.py").read_text(
+        encoding="utf-8"
+    )
     if (
         "find_package(Python 3.14 EXACT REQUIRED COMPONENTS Interpreter Development.Module)"
         not in cmake
@@ -236,18 +242,48 @@ def main() -> int:
         'python-version: "3.14"',
         "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON",
         "ENDSTONE_DYNAMIC_PROPERTIES_BUILD_LIVE_PYTHON=ON",
-        "endstone_dynamic_properties_bds_1_26_33.so",
+        "endstone_dynamic_properties_api.so",
         "linux-native-${{ steps.gate.outputs.mode }}",
+        "package_native_release.py",
         "GATE CLOSED:",
     )
     if not all(marker in linux_workflow for marker in required_linux_workflow_markers):
         failures.append("Linux native workflow is missing an exact build/gate marker")
-    if source.get("release_kind") != "portable-core-and-reference-prerelease":
-        failures.append(
-            "source release kind must identify the portable/reference prerelease"
+    if not all(
+        marker in release_workflow
+        for marker in (
+            "uses: ./.github/workflows/linux-native.yml",
+            "release_assets_only: true",
+            "portable-sdk, linux-native",
         )
-    if source.get("native_plugin_included") is not False:
-        failures.append("blocked alpha must declare native_plugin_included=false")
+    ):
+        failures.append("draft release must include canonical Linux native assets")
+    if not all(
+        marker in native_packager
+        for marker in (
+            'INSTALLED_PLUGIN_NAME = "endstone_dynamic_properties_api.so"',
+            'TESTER_DISTRIBUTION = "endstone_dynamic_properties_tester"',
+            'RELEASE_PLATFORM = "linux-x86_64"',
+            'PYTHON_ABI_TAG = "cp314-cp314-linux_x86_64"',
+            'choices=("gate-closed", "verified")',
+        )
+    ):
+        failures.append("native release packager is missing canonical asset markers")
+    if (
+        source.get("release_kind")
+        != "portable-core-reference-and-native-validation-prerelease"
+    ):
+        failures.append(
+            "source release kind must identify the native validation prerelease"
+        )
+    if source.get("native_plugin_included") is not True:
+        failures.append("native validation release must include the Linux plugin")
+    if source.get("native_plugin_operational") is not False:
+        failures.append("gate-closed native plugin must declare operational=false")
+    if source.get("native_artifact_mode") != "gate-closed":
+        failures.append("blocked alpha native artifact mode must be gate-closed")
+    if source.get("tester_wheel_included") is not True:
+        failures.append("native validation release must include the bound tester wheel")
     if source.get("supported_bds_packages") != ["1.26.33.1"]:
         failures.append("supported BDS package must be exactly 1.26.33.1")
     if source.get("supported_bds_runtime") != ["26.33"]:

@@ -2,7 +2,7 @@
 
 ## Supported releases
 
-Only the latest tagged prerelease is eligible for security fixes. Version `0.1.0-alpha.2` is a portable SDK/reference release; it is not a working native Endstone plugin and must not be represented as one.
+Only the latest tagged prerelease is eligible for security fixes. Version `0.1.0-alpha.2` is a portable SDK/reference release with a gate-closed native validation bundle; it is not a working native Endstone plugin and must not be represented as one.
 
 ## Reporting a vulnerability
 
