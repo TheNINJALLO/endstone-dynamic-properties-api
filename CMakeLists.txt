@@ -183,7 +183,14 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
         target_link_libraries(endstone_dynamic_properties_native_support PUBLIC
             endstone_dynamic_properties_core
             endstone::endstone
-            funchook::funchook)
+            funchook::funchook
+            boost::boost
+            EnTT::EnTT
+            glm::glm
+            magic_enum::magic_enum
+            Microsoft.GSL::GSL
+            nonstd::expected-lite
+            raknet::raknet)
         target_compile_definitions(endstone_dynamic_properties_native_support PRIVATE
             ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE}>
             ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633}>)
