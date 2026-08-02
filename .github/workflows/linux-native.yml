@@ -26,6 +26,13 @@ jobs:
           python-version: "3.14"
           cache: pip
           cache-dependency-path: .github/native-build-requirements.txt
+      - name: Install pinned Endstone Linux toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends \
+            clang-18 libc++-18-dev libc++abi-18-dev
       - name: Install pinned native build tools
         run: python -m pip install -r .github/native-build-requirements.txt
       - name: Classify the exact native gate
@@ -47,14 +54,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          conan profile detect --force
           # Endstone publishes project-specific source recipes (including
           # funchook and RakNet) here; they are not available from Conan Center.
           conan remote add endstone https://conan.cloudsmith.io/endstone/conan/ \
             --index 0 --force
           conan install . -of build-conan --build=missing \
-            -s build_type=Release \
-            -s compiler.cppstd=20 \
+            -pr:h native/profiles/linux-x64 \
+            -pr:b native/profiles/linux-x64 \
             -o '&:bds_build=1.26.33'
       - name: Configure the exact Linux plugin graph
         shell: bash

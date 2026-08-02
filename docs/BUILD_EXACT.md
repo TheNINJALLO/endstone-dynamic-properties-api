@@ -54,10 +54,14 @@ python tools/activate_verified_manifest.py \
 
 ## 6. Build through Conan
 
-Create a Conan 2 default profile once if the machine does not already have one:
+The checked-in Linux profile pins the Clang 18/libc++ toolchain required by
+Endstone v0.11.6. On Ubuntu 24.04, install it and then register Endstone's
+source-recipe remote:
 
 ```bash
-conan profile detect
+sudo apt-get update
+sudo apt-get install --no-install-recommends \
+  clang-18 libc++-18-dev libc++abi-18-dev
 conan remote add endstone https://conan.cloudsmith.io/endstone/conan/ \
   --index 0 --force
 ```
@@ -67,8 +71,8 @@ recipes that are not published by Conan Center.
 
 ```bash
 conan install . -of build-conan --build=missing \
-  -s build_type=Release \
-  -s compiler.cppstd=20 \
+  -pr:h native/profiles/linux-x64 \
+  -pr:b native/profiles/linux-x64 \
   -o '&:bds_build=1.26.33'
 
 cmake -S . -B build-exact \
