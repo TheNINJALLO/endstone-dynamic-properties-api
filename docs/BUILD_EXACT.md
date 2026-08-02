@@ -25,6 +25,21 @@ Confirm that the verified executable SHA-256 and size exactly match the identity
 already recorded in the matching manifest. Stop on any difference; do not
 rewrite the manifest to accept another binary or package revision.
 
+On the Linux stage server, collect the narrow identity-bound symbol discovery
+report directly from the installed executable:
+
+```bash
+python3 tools/collect_linux_native_evidence.py /home/container/bedrock_server \
+  --json-out /home/container/linux-native-evidence.json
+```
+
+The command stops before symbol collection if the filename, SHA-256, or size
+does not match the pinned manifest. It emits only matching symbol candidates
+and ELF/tool metadata; it does not copy the executable, disassembly, full symbol
+table, world data, or player records. Keep this report out of source control and
+return it to the private native review workspace. Candidate discovery alone does
+not prove a signature, ABI contract, or behavior.
+
 ## 2. Complete symbol and contract review
 
 Follow `docs/NATIVE_SYMBOL_AUDIT.md` and the storage/hook documents. Every required symbol and ABI contract must be complete in the same manifest.
