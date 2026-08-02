@@ -238,7 +238,8 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
         target_compile_features(_endstone_dynamic_properties_live PRIVATE cxx_std_20)
         target_include_directories(_endstone_dynamic_properties_live PRIVATE include)
         target_compile_definitions(_endstone_dynamic_properties_live PRIVATE
-            ENDSTONE_DYNAMIC_PROPERTIES_PYTHON_VERSION="${ENDSTONE_DYNAMIC_PROPERTIES_PYTHON_VERSION}")
+            ENDSTONE_DYNAMIC_PROPERTIES_PYTHON_VERSION="${ENDSTONE_DYNAMIC_PROPERTIES_PYTHON_VERSION}"
+            ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633}>)
         target_link_libraries(_endstone_dynamic_properties_live PRIVATE
             endstone_dynamic_properties_core
             endstone_dynamic_properties_native_support

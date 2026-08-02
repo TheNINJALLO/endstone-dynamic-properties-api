@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "linux-native.yml"
+CMAKE = ROOT / "CMakeLists.txt"
 
 
 def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
@@ -35,6 +36,16 @@ def test_linux_push_and_release_run_disposable_two_boot_acceptance() -> None:
     assert '--server-dir "$RUNNER_TEMP/dynamic-properties-live-bds"' in source
     assert "if: github.event_name != 'pull_request'" in source
     assert "name: linux-live-acceptance" in source
+
+
+def test_bound_tester_bridge_inherits_experimental_live_mode() -> None:
+    source = CMAKE.read_text(encoding="utf-8")
+    bridge = source[source.index("pybind11_add_module(") :]
+
+    assert (
+        "ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633="
+        "$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633}>"
+    ) in bridge
 
 
 def test_linux_workflow_cannot_label_an_incomplete_gate_verified() -> None:
