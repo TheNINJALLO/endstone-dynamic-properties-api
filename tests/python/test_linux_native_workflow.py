@@ -17,6 +17,7 @@ def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     assert "scripts/build_test_wheel.py" in source
     assert "endstone_dynamic_properties_api.so" in source
     assert "scripts/package_native_release.py" in source
+    assert "inputs.source_date_epoch || '315532800'" in source
     assert "ELF 64-bit LSB shared object, x86-64" in source
 
 
