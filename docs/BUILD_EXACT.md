@@ -36,11 +36,27 @@ python3 tools/collect_linux_native_evidence.py /home/container/bedrock_server \
 The command stops before symbol collection if the filename, SHA-256, or size
 does not match the pinned manifest. It emits only matching symbol candidates
 and ELF/tool metadata; it does not copy the executable, disassembly, full symbol
-table, world data, or player records. Keep this report out of source control and
-return it to the private native review workspace. Candidate discovery alone does
-not prove a signature, ABI contract, or behavior. The ELF scan uses only the
-Python standard library; `c++filt` is optional and exact mangled names are kept
-when it is unavailable in a minimal game-server container.
+table, world data, or player records. For a stripped executable it includes
+only NUL-terminated DynamicProperties-related diagnostic/RTTI strings and their
+ELF RVAs, which provide bounded cross-reference anchors for private analysis.
+Keep this report out of source control and return it to the private native
+review workspace. Candidate or string discovery alone does not prove a
+signature, ABI contract, or behavior. The ELF scan uses only the Python
+standard library; `c++filt` is optional and exact mangled names are kept when it
+is unavailable in a minimal game-server container.
+
+In the private review workspace, focused code cross-references can then be
+resolved from the stripped executable. This second report contains instruction
+bytes and must also remain out of source control. Installing `capstone` adds
+instruction validation and bounded disassembly context; the identity and unwind
+boundary checks do not depend on it.
+
+```bash
+python tools/analyze_linux_dynamic_property_xrefs.py \
+  /private/path/bedrock_server \
+  /private/path/linux-native-evidence.json \
+  --json-out /private/path/linux-dynamic-property-xrefs.json
+```
 
 ## 2. Complete symbol and contract review
 
@@ -145,8 +161,10 @@ ELF inspection, and tester-wheel build on Ubuntu 22.04 x86-64 with CPython
 exceeds `GLIBC_2.35`, then classifies the native proof before configuring
 CMake:
 
-- incomplete proof builds `linux-native-gate-closed` for compilation and
-  packaging validation only; the plugin refuses service registration;
+- an exact-hash experimental bridge builds `linux-native-experimental-live`
+  with truthful per-target capabilities for stage testing;
+- source without either bridge builds `linux-native-gate-closed` for
+  compilation and packaging validation only;
 - complete proof requires the verified adapter source and builds
   `linux-native-verified` with the same runtime checks still active.
 

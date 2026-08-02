@@ -1,11 +1,11 @@
 {
   "schema": 1,
   "name": "endstone-dynamic-properties-api",
-  "version": "0.1.0-alpha.2",
-  "release_kind": "portable-core-reference-and-native-validation-prerelease",
+  "version": "0.1.0-alpha.3",
+  "release_kind": "experimental-live-native-prerelease",
   "native_plugin_included": true,
-  "native_plugin_operational": false,
-  "native_artifact_mode": "gate-closed",
+  "native_plugin_operational": true,
+  "native_artifact_mode": "experimental-live",
   "linux_glibc_ceiling": "2.35",
   "tester_wheel_included": true,
   "service": "endstone:dynamic-properties:v1",
@@ -13,6 +13,6 @@
   "supported_bds_packages": ["1.26.33.1"],
   "supported_bds_runtime": ["26.33"],
   "endstone_tags": ["v0.11.6"],
-  "native_policy": "one complete-control adapter; no live-only registration",
+  "native_policy": "exact-hash experimental live registration with truthful per-target capabilities",
   "platforms": ["linux-x64", "windows-x64"]
 }

@@ -50,14 +50,14 @@ jobs:
           echo "source_date_epoch=${source_date_epoch}" >> "$GITHUB_OUTPUT"
       - run: python scripts/verify_project_metadata.py
       - run: python tools/verify_fail_closed.py
-      - name: Confirm the native validation release remains gate closed
+      - name: Confirm the verified complete-control gate remains closed
         shell: bash
         run: |
           set -euo pipefail
           test ! -e src/verified_bds_26_30_adapter.cpp
           for manifest in native/manifests/*-1.26.33.1.json; do
             if python tools/verify_native_manifest.py "$manifest"; then
-              echo "Gate-closed release unexpectedly contains an open native gate" >&2
+              echo "Experimental release unexpectedly contains a verified native gate" >&2
               exit 1
             fi
           done

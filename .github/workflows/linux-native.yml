@@ -81,6 +81,10 @@ jobs:
             test -s src/verified_bds_26_30_adapter.cpp
             echo "mode=verified" >> "$GITHUB_OUTPUT"
             echo "verified_bridge=ON" >> "$GITHUB_OUTPUT"
+          elif test -s src/experimental_live_bds_26_33_adapter.cpp; then
+            python tools/verify_fail_closed.py
+            echo "mode=experimental-live" >> "$GITHUB_OUTPUT"
+            echo "verified_bridge=OFF" >> "$GITHUB_OUTPUT"
           else
             python tools/verify_fail_closed.py
             echo "mode=gate-closed" >> "$GITHUB_OUTPUT"
@@ -122,6 +126,7 @@ jobs:
             -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_LIVE_PYTHON=ON \
             -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_TESTS=ON \
             -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_EXAMPLES=ON \
+            -DENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633=ON \
             -DENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE=${{ steps.gate.outputs.verified_bridge }} \
             -DENDSTONE_BDS_BUILD=1.26.33 \
             -DENDSTONE_BDS_PACKAGE=1.26.33.1
@@ -176,6 +181,11 @@ jobs:
           if [[ "${{ steps.gate.outputs.mode }}" == "verified" ]]; then
             printf '%s\n' \
               'VERIFIED: the exact Linux manifest, reviewed bridge, and stage evidence passed.' \
+              > "$stage/evidence/BUILD_MODE.txt"
+          elif [[ "${{ steps.gate.outputs.mode }}" == "experimental-live" ]]; then
+            printf '%s\n' \
+              'EXPERIMENTAL LIVE: exact-hash world/player/entity CRUD and hooks are enabled.' \
+              'The capability map keeps offline/item/block paths disabled until verified.' \
               > "$stage/evidence/BUILD_MODE.txt"
           else
             printf '%s\n' \

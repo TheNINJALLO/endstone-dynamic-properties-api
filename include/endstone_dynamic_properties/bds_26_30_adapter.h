@@ -12,6 +12,8 @@ class Server;
 
 namespace endstone_dynamic_properties {
 
+class DynamicPropertyService;
+
 struct NativeActivationReport {
     bool runtime_version_match{};
     bool endstone_version_match{};
@@ -39,5 +41,15 @@ std::shared_ptr<IDynamicPropertyAdapter> makeBds2633DynamicPropertyAdapter(
     endstone::Server &server);
 [[nodiscard]] NativeActivationReport inspectBds2633DynamicPropertyActivation(
     endstone::Server &server);
+
+// The experimental adapter deliberately exposes only capabilities backed by
+// the exact 1.26.33.1 Linux binary. It is never constructed on an identity or
+// runtime mismatch, and it does not make the complete-control claim used by a
+// verified release.
+[[nodiscard]] bool hasExperimentalLiveControl(
+    const DynamicPropertyCapabilities &capabilities) noexcept;
+void bindExperimentalLiveBds2633Service(
+    std::shared_ptr<DynamicPropertyService> service);
+void unbindExperimentalLiveBds2633Service() noexcept;
 
 } // namespace endstone_dynamic_properties

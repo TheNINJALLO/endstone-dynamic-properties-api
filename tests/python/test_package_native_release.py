@@ -12,12 +12,12 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "package_native_release.py"
 WHEEL_NAME = (
-    "endstone_dynamic_properties_tester-0.1.0a2-"
+    "endstone_dynamic_properties_tester-0.1.0a3-"
     "cp314-cp314-linux_x86_64.whl"
 )
 RELEASE_SUFFIX = (
-    "0.1.0-alpha.2-bds-1.26.33.1-endstone-0.11.6-"
-    "linux-x86_64-glibc-2.35-gate-closed"
+    "0.1.0-alpha.3-bds-1.26.33.1-endstone-0.11.6-"
+    "linux-x86_64-glibc-2.35-experimental-live"
 )
 
 
@@ -45,14 +45,14 @@ def make_stage(
             elf_header + b"bridge\x00GLIBC_" + bridge_glibc.encode("ascii"),
         )
         archive.writestr(
-            "endstone_dynamic_properties_tester-0.1.0a2.dist-info/WHEEL",
+            "endstone_dynamic_properties_tester-0.1.0a3.dist-info/WHEEL",
             "Wheel-Version: 1.0\n"
             "Generator: test\n"
             "Root-Is-Purelib: false\n"
             "Tag: cp314-cp314-linux_x86_64\n",
         )
     (evidence / "BUILD_MODE.txt").write_text(
-        "GATE CLOSED: compilation and packaging validation only.\n",
+        "EXPERIMENTAL LIVE: exact-hash live adapter enabled.\n",
         encoding="utf-8",
     )
     return stage, wheel
@@ -72,7 +72,7 @@ def run_packager(stage: Path, wheel: Path, output: Path) -> subprocess.Completed
             "--output-dir",
             str(output),
             "--mode",
-            "gate-closed",
+            "experimental-live",
         ],
         cwd=ROOT,
         env=environment,
@@ -108,8 +108,8 @@ def test_packager_creates_named_plugin_wheel_and_deterministic_bundle(
         assert f"{prefix}/plugins/{WHEEL_NAME}" in names
         assert f"{prefix}/evidence/BUILD_MODE.txt" in names
         manifest = json.loads(archive.read(f"{prefix}/RELEASE_MANIFEST.json"))
-        assert manifest["mode"] == "gate-closed"
-        assert manifest["operational"] is False
+        assert manifest["mode"] == "experimental-live"
+        assert manifest["operational"] is True
         assert manifest["python_abi"] == "cp314"
         assert manifest["glibc"] == {
             "ceiling": "2.35",

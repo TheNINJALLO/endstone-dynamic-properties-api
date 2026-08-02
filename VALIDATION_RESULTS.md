@@ -1,6 +1,6 @@
 # Validation results
 
-Release metadata: `0.1.0-alpha.2`<br>
+Release metadata: `0.1.0-alpha.3`<br>
 Working-tree validation date: `2026-08-02`
 
 ## Passed locally
@@ -65,25 +65,28 @@ These hosted jobs must pass on the exact commit before it is tagged. Earlier bun
 
 ## Native status
 
-The exact BDS bridge is not activated and no deployable native DLL/SO is
-produced. Hosted CI and tagged releases emit a visibly marked gate-closed ELF,
-its ABI-matched tester wheel, and a combined install-layout bundle for
-build-graph validation; the plugin refuses service registration.
+The exact-hash Linux experimental bridge now registers world, online-player,
+and loaded-entity capabilities. Hosted CI and tagged releases emit a visibly
+marked `experimental-live` ELF, its ABI-matched tester wheel, and a combined
+install-layout bundle. The verified complete-control gate remains closed.
 
 The official Windows and Linux executable SHA-256/size identities are recorded
-and enforced by both manifest verification and the compiled closed gate. They
-are identity evidence only and do not satisfy any capability proof.
+and enforced by both manifest verification and the compiled runtime gate. The
+experimental adapter additionally binds the exact Linux world/actor
+dynamic-property core and mutation-hook paths. Live stage results are still
+required before those paths can be marked verified.
 
 Still required independently for Windows and Linux BDS package `1.26.33.1`:
 
-- exact symbol RVAs and fingerprints;
-- signature and behavior review for every required symbol;
+- remaining item, block, storage, and persistence symbol contracts;
+- signature and behavior review for every verified-release symbol;
 - offline-player and stored-entity storage contract review;
 - supported block dynamic-property contract review;
-- external set/remove/clear hook review;
+- live external set/remove/clear hook review;
 - reviewed `src/verified_bds_26_30_adapter.cpp` source and SHA-256;
 - CPython 3.14 compilation/import validation of the live tester bridge and its
   platform wheel in the exact staged server package;
 - complete disposable-world stage probe with retained evidence.
 
-The plugin refuses to register `endstone:dynamic-properties:v1` until all proof gates pass together.
+The plugin exposes `complete_control=false` until all proof gates pass together;
+unimplemented target capabilities remain false.

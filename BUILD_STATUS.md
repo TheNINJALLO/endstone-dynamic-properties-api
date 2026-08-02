@@ -1,6 +1,6 @@
 # Build status
 
-Version: **0.1.0-alpha.2**
+Version: **0.1.0-alpha.3**
 
 ## Portable unified system
 
@@ -26,9 +26,8 @@ Version: **0.1.0-alpha.2**
   implemented.
 - Hosted Linux x86-64 `.so` plus CPython 3.14 tester-wheel compilation is
   configured on the Ubuntu 22.04 / GLIBC 2.35 compatibility floor. Packaging
-  rejects newer glibc imports in either native binary. Until native proof
-  activation, its artifact is visibly marked gate-closed and is not deployable
-  as a working service.
+  rejects newer glibc imports in either native binary. The artifact is visibly
+  marked `experimental-live`.
 
 ## Exact native bridge
 
@@ -38,18 +37,22 @@ Version: **0.1.0-alpha.2**
 - Windows and Linux archive identities: pinned.
 - Exact Windows and Linux executable SHA-256/size identities: recorded and
   enforced; identity evidence alone does not activate the native gate.
-- Required symbol manifest: present, unresolved.
+- Exact Linux world/actor core RVAs and libc++ value/container ABI: recovered
+  from the official executable and bound behind its full SHA-256/size check.
 - Offline-player storage contract: not yet behavior-verified.
 - Stored-entity storage contract: not yet behavior-verified.
 - Block dynamic-property contract: not yet behavior-verified.
-- External set/remove/clear hooks: not yet behavior-verified.
+- External set/remove/clear hooks: implemented experimentally with funchook;
+  live behavior verification is required before verified status.
 - Reviewed native bridge source: absent.
 - Complete stage probe: not passed.
-- Live service registration: disabled by design.
+- Experimental live service registration: enabled for world, online-player,
+  and loaded-entity targets on exact identity match.
+- Live CRUD/list/revision/bulk/transfer/migration/import/rollback: implemented
+  for those three targets.
+- Offline/stored, item, and block capabilities: disabled and return
+  `unsupported`.
 
-This alpha is a complete portable API/reference and activation package. It is
-not yet an installable working native server plugin. The portable release
-assets now include a non-deployable, versioned gate-closed Linux `.so`, its
-ABI-matched CPython 3.14 tester wheel, and an install-layout ZIP containing
-both. These assets validate the exact compilation and packaging graph and do
-not imply that the service can register.
+This alpha is an installable experimental Linux server plugin plus a matching
+CPython 3.14 tester wheel. It is intended to collect live stage evidence and
+fix the remaining target paths; it is not a verified complete-control release.

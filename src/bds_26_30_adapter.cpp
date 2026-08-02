@@ -16,6 +16,9 @@
 #ifndef ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE
 #define ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE 0
 #endif
+#ifndef ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633
+#define ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 0
+#endif
 
 namespace endstone_dynamic_properties {
 
@@ -24,6 +27,10 @@ namespace endstone_dynamic_properties {
 // have external linkage: declaring it in the anonymous namespace makes an
 // otherwise valid generated bridge impossible to link.
 std::shared_ptr<IDynamicPropertyAdapter> makeVerifiedBds2633DynamicPropertyAdapter(
+    endstone::Server &server);
+#endif
+#if ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 && defined(__linux__)
+std::shared_ptr<IDynamicPropertyAdapter> makeExperimentalLiveBds2633DynamicPropertyAdapter(
     endstone::Server &server);
 #endif
 
@@ -241,7 +248,27 @@ std::shared_ptr<IDynamicPropertyAdapter> makeBds2633DynamicPropertyAdapter(
 #if ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE
     if (report.complete()) return makeVerifiedBds2633DynamicPropertyAdapter(server);
 #endif
+#if ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 && defined(__linux__)
+    if (report.runtime_version_match && report.endstone_version_match &&
+        report.executable_hash_match) {
+        return makeExperimentalLiveBds2633DynamicPropertyAdapter(server);
+    }
+#endif
     return std::make_shared<GuardedBds2633DynamicPropertyAdapter>(std::move(report));
+}
+
+bool hasExperimentalLiveControl(
+    const DynamicPropertyCapabilities &capabilities) noexcept {
+    return capabilities.world && capabilities.online_players &&
+           capabilities.loaded_entities && capabilities.read && capabilities.write &&
+           capabilities.remove && capabilities.clear && capabilities.list_ids &&
+           capabilities.list_collections && capabilities.byte_count &&
+           capabilities.bulk_set && capabilities.collection_rename &&
+           capabilities.property_copy_move && capabilities.collection_copy_move &&
+           capabilities.collection_migration && capabilities.export_import &&
+           capabilities.atomic_transactions && capabilities.rollback &&
+           capabilities.persistence_flush && capabilities.exact_build_match &&
+           capabilities.exact_binary_hash_match && capabilities.symbols_validated;
 }
 
 } // namespace endstone_dynamic_properties

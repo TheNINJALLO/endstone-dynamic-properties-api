@@ -1,7 +1,7 @@
 # Endstone Dynamic Properties API Tester
 
 This is the operator-only, CPython 3.14 acceptance wheel for Dynamic
-Properties API `0.1.0a2` on Endstone `0.11.6`. The wheel loads only its
+Properties API `0.1.0a3` on Endstone `0.11.6`. The wheel loads only its
 package-local `_endstone_dynamic_properties_live` extension. It has no
 in-memory or pure-Python fallback: when the complete native service is not
 available, every test command says so and performs no mutation.

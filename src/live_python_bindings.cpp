@@ -624,6 +624,7 @@ py::dict status(endstone::Server &server) {
     out["available"] = static_cast<bool>(service);
     out["adapter"] = py::none();
     out["complete_control"] = false;
+    out["operational_live"] = false;
     out["capabilities"] = py::dict();
     out["runtime_version_match"] = activation.runtime_version_match;
     out["endstone_version_match"] = activation.endstone_version_match;
@@ -644,6 +645,7 @@ py::dict status(endstone::Server &server) {
     const auto caps = service->capabilities();
     out["adapter"] = service->adapterName();
     out["complete_control"] = caps.completeControl();
+    out["operational_live"] = hasExperimentalLiveControl(caps);
     out["capabilities"] = capabilitiesToDict(caps);
     return out;
 }

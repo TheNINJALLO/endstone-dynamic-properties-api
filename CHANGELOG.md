@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## 0.1.0-alpha.3 - 2026-08-02
+
+### Added
+
+- Added an exact-SHA experimental Linux adapter for real world,
+  online-player, and loaded-entity dynamic properties on BDS `1.26.33.1`.
+- Added live inventory/CRUD/revision/bulk/transfer/migration/import operations,
+  rollback transactions, and BDS persistence-lifecycle handoff.
+- Added cancellable external set/remove/clear interception for mapped live
+  targets and exposed truthful partial capabilities to the tester.
+- Added built-in ELF evidence and dynamic-property xref analysis tools for the
+  stripped official Linux server.
+
+### Changed
+
+- Native artifacts are now named `experimental-live` and still enforce the
+  Ubuntu 22.04 / `GLIBC_2.35` compatibility ceiling.
+- Bumped the plugin, API package, and bound CPython 3.14 tester to alpha.3.
+
 ### Changed
 
 - Moved Linux release builds to the Ubuntu 22.04 compatibility floor, added a
@@ -86,6 +105,7 @@
 - Kept missing, malformed, and forged verified native manifests fail-closed even during blocked-manifest inspection.
 - Normalized exact runtime metadata on the canonical BDS runtime `26.33` and required an exact draft-release asset set.
 
-[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.2...HEAD
+[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.3...HEAD
+[0.1.0-alpha.3]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.1

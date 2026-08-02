@@ -23,7 +23,12 @@ public:
         }
 
         service_ = std::make_shared<endstone_dynamic_properties::DynamicPropertyService>(adapter_);
-        if (!service_->capabilities().completeControl()) {
+#if ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 && defined(__linux__)
+        endstone_dynamic_properties::bindExperimentalLiveBds2633Service(service_);
+#endif
+        const auto capabilities = service_->capabilities();
+        if (!capabilities.completeControl() &&
+            !endstone_dynamic_properties::hasExperimentalLiveControl(capabilities)) {
             const auto report =
                 endstone_dynamic_properties::inspectBds2633DynamicPropertyActivation(getServer());
             std::string message =
@@ -49,15 +54,21 @@ public:
             provider_,
             *this,
             endstone::ServicePriority::Normal);
+        const auto mode = capabilities.completeControl()
+            ? "complete-control"
+            : "experimental live world/player/entity";
         getLogger().info(
             std::string("Dynamic Properties API ") + ENDSTONE_DYNAMIC_PROPERTIES_VERSION +
-            " registered complete service " +
+            " registered " + mode + " service " +
             std::string(endstone_dynamic_properties::DynamicPropertyServiceName) +
             " using " + service_->adapterName());
 #endif
     }
 
     void onDisable() override {
+#if ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 && defined(__linux__)
+        endstone_dynamic_properties::unbindExperimentalLiveBds2633Service();
+#endif
         getServer().getServiceManager().unregisterAll(*this);
         provider_.reset();
         service_.reset();

@@ -148,7 +148,7 @@ def main() -> int:
         "security policy version": (
             capture(
                 "SECURITY.md",
-                r"Version `([^`]+)` is a portable SDK/reference release",
+                r"Version\s+`([^`]+)` is an experimental live Linux plugin",
                 "security policy version",
             ),
             release,
@@ -251,6 +251,7 @@ def main() -> int:
         "linux-native-${{ steps.gate.outputs.mode }}",
         "package_native_release.py",
         "GATE CLOSED:",
+        "EXPERIMENTAL LIVE:",
     )
     if not all(marker in linux_workflow for marker in required_linux_workflow_markers):
         failures.append("Linux native workflow is missing an exact build/gate marker")
@@ -271,23 +272,23 @@ def main() -> int:
             'RELEASE_PLATFORM = "linux-x86_64"',
             'PYTHON_ABI_TAG = "cp314-cp314-linux_x86_64"',
             'source_release.get("linux_glibc_ceiling", "")',
-            'choices=("gate-closed", "verified")',
+            'choices=("gate-closed", "experimental-live", "verified")',
         )
     ):
         failures.append("native release packager is missing canonical asset markers")
     if (
         source.get("release_kind")
-        != "portable-core-reference-and-native-validation-prerelease"
+        != "experimental-live-native-prerelease"
     ):
         failures.append(
-            "source release kind must identify the native validation prerelease"
+            "source release kind must identify the experimental live prerelease"
         )
     if source.get("native_plugin_included") is not True:
-        failures.append("native validation release must include the Linux plugin")
-    if source.get("native_plugin_operational") is not False:
-        failures.append("gate-closed native plugin must declare operational=false")
-    if source.get("native_artifact_mode") != "gate-closed":
-        failures.append("blocked alpha native artifact mode must be gate-closed")
+        failures.append("native release must include the Linux plugin")
+    if source.get("native_plugin_operational") is not True:
+        failures.append("experimental live native plugin must declare operational=true")
+    if source.get("native_artifact_mode") != "experimental-live":
+        failures.append("alpha.3 native artifact mode must be experimental-live")
     if source.get("linux_glibc_ceiling") != "2.35":
         failures.append("Linux native releases must enforce a GLIBC_2.35 ceiling")
     if source.get("tester_wheel_included") is not True:

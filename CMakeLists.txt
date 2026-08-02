@@ -7,6 +7,12 @@ include(GNUInstallDirs)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if(MSVC)
+    # Ninja does not inject the exception model that Visual Studio project
+    # generators normally provide. The core and native bridge both use C++
+    # exceptions, so make the contract explicit for MSVC and clang-cl.
+    add_compile_options(/EHsc)
+endif()
 
 option(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_TESTS "Build portable tests" ON)
 option(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_EXAMPLES "Build portable examples" ON)
@@ -16,6 +22,8 @@ option(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_LIVE_PYTHON
 option(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_NATIVE_2630 "Build the guarded BDS 26.30 boundary" ON)
 option(ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE
        "Compile the generated, stage-verified complete-control bridge" OFF)
+option(ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633
+       "Compile the exact-hash experimental BDS 1.26.33.1 live adapter" ON)
 option(ENDSTONE_DYNAMIC_PROPERTIES_WARNINGS_AS_ERRORS
        "Treat project warnings as errors" ON)
 set(ENDSTONE_BDS_BUILD "1.26.33" CACHE STRING "Exact Endstone runtime BDS build")
@@ -156,6 +164,10 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
 
     if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_NATIVE_2630)
         set(DYNAMIC_PROPERTIES_NATIVE_SOURCES src/bds_26_30_adapter.cpp)
+        if(ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633)
+            list(APPEND DYNAMIC_PROPERTIES_NATIVE_SOURCES
+                 src/experimental_live_bds_26_33_adapter.cpp)
+        endif()
         if(ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE)
             list(APPEND DYNAMIC_PROPERTIES_NATIVE_SOURCES
                  src/verified_bds_26_30_adapter.cpp)
@@ -166,12 +178,19 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
         add_library(endstone_dynamic_properties_native_support STATIC
             ${DYNAMIC_PROPERTIES_NATIVE_SOURCES})
         target_include_directories(endstone_dynamic_properties_native_support
-            PUBLIC include)
+            PUBLIC include
+            PRIVATE "${endstone_SOURCE_DIR}/src")
         target_link_libraries(endstone_dynamic_properties_native_support PUBLIC
             endstone_dynamic_properties_core
-            endstone::endstone)
+            endstone::endstone
+            funchook::funchook)
         target_compile_definitions(endstone_dynamic_properties_native_support PRIVATE
-            ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE}>)
+            ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE}>
+            ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633}>)
+        if(UNIX AND ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633)
+            target_link_libraries(endstone_dynamic_properties_native_support PUBLIC
+                ${CMAKE_DL_LIBS})
+        endif()
     endif()
 
     endstone_add_plugin(dynamic_properties_api src/plugin.cpp)
@@ -196,6 +215,7 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
     target_compile_definitions(dynamic_properties_api PRIVATE
         ENDSTONE_DYNAMIC_PROPERTIES_NATIVE_2630=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_BUILD_NATIVE_2630}>
         ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE}>
+        ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633}>
         ENDSTONE_DYNAMIC_PROPERTIES_BDS_BUILD="${ENDSTONE_BDS_BUILD}"
         ENDSTONE_DYNAMIC_PROPERTIES_BDS_PACKAGE="${ENDSTONE_BDS_PACKAGE}"
         ENDSTONE_DYNAMIC_PROPERTIES_ENDSTONE_VERSION="0.11.6"

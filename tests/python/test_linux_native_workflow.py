@@ -32,11 +32,13 @@ def test_linux_workflow_cannot_label_an_incomplete_gate_verified() -> None:
 
     verification = source.index("python tools/verify_native_manifest.py")
     verified_mode = source.index('echo "mode=verified"')
+    experimental_mode = source.index('echo "mode=experimental-live"')
     closed_mode = source.index('echo "mode=gate-closed"')
-    assert verification < verified_mode < closed_mode
+    assert verification < verified_mode < experimental_mode < closed_mode
     assert "test -s src/verified_bds_26_30_adapter.cpp" in source
     assert "python tools/verify_fail_closed.py" in source
     assert "GATE CLOSED:" in source
+    assert "EXPERIMENTAL LIVE:" in source
     assert "linux-native-${{ steps.gate.outputs.mode }}" in source
 
 

@@ -11,6 +11,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import mmap
 from pathlib import Path
 import platform
 import shutil
@@ -55,6 +56,12 @@ SYMBOL_TERMS = (
     "getoradddynamicproperties",
     "getdynamicpropertiesmanager",
     "writetolevelstorage",
+)
+STRING_ANCHOR_TERMS = (
+    b"DynamicPropert",
+    b"PropertyCollection",
+    b"dynamic propert",
+    b"dynamic_propert",
 )
 
 
@@ -143,6 +150,7 @@ def read_elf(executable: Path) -> tuple[dict[str, int], list[dict[str, int]]]:
             "section_offset": values[6],
             "section_entry_size": values[11],
             "section_count": values[12],
+            "section_name_index": values[13],
         }
         if header["machine"] != EM_X86_64:
             raise NativeEvidenceError("bedrock_server must target Linux x86-64")
@@ -160,6 +168,7 @@ def read_elf(executable: Path) -> tuple[dict[str, int], list[dict[str, int]]]:
             sections.append(
                 {
                     "type": fields[1],
+                    "flags": fields[2],
                     "address": fields[3],
                     "offset": fields[4],
                     "size": fields[5],
@@ -167,6 +176,21 @@ def read_elf(executable: Path) -> tuple[dict[str, int], list[dict[str, int]]]:
                     "entry_size": fields[9],
                 }
             )
+        if header["section_name_index"] < len(sections):
+            name_section = sections[header["section_name_index"]]
+            names = _read_exact(
+                stream,
+                name_section["offset"],
+                name_section["size"],
+                "section names",
+            )
+            stream.seek(header["section_offset"])
+            for index, section in enumerate(sections):
+                offset = header["section_offset"] + index * header["section_entry_size"]
+                fields = SECTION_HEADER.unpack(
+                    _read_exact(stream, offset, SECTION_HEADER.size, "section header")
+                )
+                section["name"] = _string_at(names, fields[0])
     return header, sections
 
 
@@ -238,6 +262,57 @@ def scan_symbols(
             if selected:
                 return selected, symbol_table
     return [], "none"
+
+
+def _file_offset_to_section(
+    file_offset: int,
+    sections: list[dict[str, Any]],
+) -> tuple[int, str] | None:
+    for section in sections:
+        start = section["offset"]
+        end = start + section["size"]
+        if start <= file_offset < end:
+            return (
+                section["address"] + file_offset - start,
+                str(section.get("name", "")),
+            )
+    return None
+
+
+def scan_string_anchors(
+    executable: Path,
+    sections: list[dict[str, int]],
+) -> list[dict[str, Any]]:
+    anchors: dict[int, dict[str, Any]] = {}
+    with executable.open("rb") as stream:
+        with mmap.mmap(stream.fileno(), 0, access=mmap.ACCESS_READ) as image:
+            for term in STRING_ANCHOR_TERMS:
+                search_from = 0
+                while True:
+                    match = image.find(term, search_from)
+                    if match < 0:
+                        break
+                    search_from = match + len(term)
+                    start = image.rfind(b"\0", max(0, match - 1024), match) + 1
+                    end = image.find(b"\0", match, min(len(image), match + 2048))
+                    if end < 0 or end - start > 2048:
+                        continue
+                    raw = image[start:end]
+                    if not raw or any(byte < 32 or byte > 126 for byte in raw):
+                        continue
+                    location = _file_offset_to_section(start, sections)
+                    if location is None:
+                        continue
+                    rva, section_name = location
+                    anchors[start] = {
+                        "file_offset": start,
+                        "file_offset_hex": f"0x{start:x}",
+                        "rva": rva,
+                        "rva_hex": f"0x{rva:x}",
+                        "section": section_name,
+                        "text": raw.decode("ascii"),
+                    }
+    return [anchors[offset] for offset in sorted(anchors)]
 
 
 def demangle_symbols(cxxfilt: str | None, symbols: list[dict[str, Any]]) -> bool:
@@ -326,6 +401,7 @@ def collect(executable: Path, manifest_path: Path) -> dict[str, Any]:
 
     header, sections = read_elf(executable)
     symbols, symbol_table = scan_symbols(executable, sections)
+    string_anchors = scan_string_anchors(executable, sections)
     cxxfilt = find_optional_tool("c++filt", "llvm-cxxfilt")
     demangled = demangle_symbols(cxxfilt, symbols)
     symbols.sort(key=lambda symbol: (symbol["rva"], symbol["mangled_name"]))
@@ -366,6 +442,8 @@ def collect(executable: Path, manifest_path: Path) -> dict[str, Any]:
         "symbol_table": symbol_table,
         "candidate_count": len(symbols),
         "candidates": symbols,
+        "string_anchor_count": len(string_anchors),
+        "string_anchors": string_anchors,
         "warnings": warnings,
     }
 

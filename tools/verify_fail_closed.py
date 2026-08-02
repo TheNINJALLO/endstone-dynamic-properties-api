@@ -31,8 +31,12 @@ for required_identity in (
         failures.append(
             f"generated header lacks exact executable identity: {required_identity}"
         )
-if "if (!service_->capabilities().completeControl())" not in plugin or "refused to register" not in plugin:
-    failures.append("complete-control service registration refusal is missing")
+if (
+    "capabilities.completeControl()" not in plugin
+    or "hasExperimentalLiveControl(capabilities)" not in plugin
+    or "refused to register" not in plugin
+):
+    failures.append("verified/experimental service registration guards are missing")
 if "BinaryIdentityMismatch" not in adapter or "SymbolValidationFailed" not in adapter:
     failures.append("guarded native adapter failure modes are missing")
 if "ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE" not in cmake:

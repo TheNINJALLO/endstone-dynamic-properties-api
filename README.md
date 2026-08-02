@@ -1,6 +1,6 @@
 # Endstone Dynamic Properties API
 
-**Release:** `v0.1.0-alpha.2`<br>
+**Release:** `v0.1.0-alpha.3`<br>
 **Service ABI:** `endstone:dynamic-properties:v1`<br>
 **Target:** Minecraft Bedrock Dedicated Server package `1.26.33.1`, runtime `26.33`, Endstone `v0.11.6`
 
@@ -24,17 +24,23 @@ Supported public values are `bool`, finite `double`, UTF-8 `string`, and `Vector
 
 ## Current release status
 
-> **Native-validation alpha:** this source produces a Linux Endstone plugin and
-> its ABI-matched tester wheel, but the plugin is gate-closed and is not yet a
-> working server API. It also provides the portable C++ SDK, pure-Python
-> reference implementation, strict native activation gate, and the tooling
-> needed to complete platform verification.
+> **Experimental live alpha:** the Linux plugin registers a real, exact-hash
+> adapter for world, online-player, and loaded-entity dynamic properties on BDS
+> `1.26.33.1` with Endstone `0.11.6`. It supports existing-property inventory,
+> CRUD, revisions, bulk/copy/move/rename/import operations, rollback
+> transactions, persistence testing, and cancellable set/remove/clear hooks.
+> Offline/stored, item-stack, and block targets remain disabled in the reported
+> capability map until their native paths pass live testing.
 
 The **portable C++ API, Python reference package, in-memory complete-control adapter, validation, access isolation, events, audits, export/import, migrations, optimistic revisions, and atomic rollback transactions are implemented and tested**.
 
 Mutation requests are defensively copied, callbacks run outside commit locks, and final limit validation is serialized across services sharing an adapter. Event-listener failures cannot suppress later listeners or erase the audit of an already committed write. Audit-sink failures are reported without replacing the committed result.
 
-The exact native bridge is intentionally fail-closed. The Endstone service does not register unless the same platform adapter proves every target family in one activation:
+The verified complete-control bridge remains intentionally fail-closed. The
+alpha.3 experimental Linux adapter is a separate, visibly named test mode: it
+registers only after the exact executable and runtime identity match, and it
+reports only the target families it actually implements. A future verified
+release must still prove every target family in one activation:
 
 1. Exact BDS `26.33` and Endstone `0.11.6` runtime match.
 2. Exact running executable SHA-256 and size match the reviewed `1.26.33.1` manifest.
@@ -44,7 +50,9 @@ The exact native bridge is intentionally fail-closed. The Endstone service does 
 6. The reviewed native bridge source matches its recorded SHA-256.
 7. The complete disposable-world probe passes on the target platform.
 
-A live-only subset cannot register under this ABI. This is deliberate: one service means one truthful capability contract.
+Consumers must inspect the capability map. `complete_control=false` identifies
+the experimental subset; unavailable targets return `unsupported` and are
+never backed by synthetic or sidecar storage.
 
 The source tree also includes an operator-only CPython 3.14 tester wheel. Its
 package-local native bridge exposes no in-memory fallback, its configured
@@ -235,18 +243,17 @@ python tools/activate_verified_manifest.py \
 The `Linux native plugin and live tester` GitHub workflow compiles the actual
 Linux x86-64 Endstone entry point
 `endstone_dynamic_properties_api.so` and its matching CPython 3.14
-tester wheel. While the checked-in native proof is incomplete, the uploaded
-artifact is explicitly named `linux-native-gate-closed`, contains a warning,
-and refuses to register the service. After the reviewed bridge, manifest, and
-stage report pass the same verifier, the unchanged workflow switches to a
-`linux-native-verified` artifact. A successful compile never opens the runtime
-gate by itself.
+tester wheel. With the experimental adapter present, the uploaded artifact is
+named `linux-native-experimental-live` and registers only on the exact official
+Linux executable fingerprint. After the complete reviewed bridge, manifest,
+and stage report pass the same verifier, the workflow switches to a
+`linux-native-verified` artifact.
 
 Tagged releases also contain a versioned, platform- and compatibility-named
 `.so`, the standard PEP 427 tester wheel, and one versioned ZIP containing both
-files under their install-ready names. Gate-closed filenames remain visibly
-marked `gate-closed`; the release workflow removes that mode only after the
-same native verifier reports a complete proof.
+files under their install-ready names. Experimental filenames remain visibly
+marked `experimental-live`; the release workflow uses `verified` only after the
+complete native verifier reports a full proof.
 
 Linux native release assets are built on the Endstone-supported Ubuntu 22.04
 floor and rejected during packaging if either the plugin or tester bridge

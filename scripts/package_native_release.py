@@ -127,7 +127,11 @@ def main() -> int:
     parser.add_argument("--stage-dir", type=Path, required=True)
     parser.add_argument("--wheel", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--mode", choices=("gate-closed", "verified"), required=True)
+    parser.add_argument(
+        "--mode",
+        choices=("gate-closed", "experimental-live", "verified"),
+        required=True,
+    )
     args = parser.parse_args()
 
     source_release = json.loads((ROOT / "SOURCE_RELEASE.json").read_text(encoding="utf-8"))
@@ -141,10 +145,10 @@ def main() -> int:
         raise SystemExit(
             f"Native release mode mismatch: metadata={expected_mode!r}, build={args.mode!r}"
         )
-    expected_operational = args.mode == "verified"
+    expected_operational = args.mode in {"experimental-live", "verified"}
     if source_release.get("native_plugin_operational") is not expected_operational:
         raise SystemExit(
-            "native_plugin_operational must be true only for a verified native release"
+            "native_plugin_operational does not match the selected native release mode"
         )
 
     packages = source_release.get("supported_bds_packages")
@@ -180,7 +184,11 @@ def main() -> int:
     if not build_mode.is_file():
         raise SystemExit(f"Native build-mode evidence is missing: {build_mode}")
     mode_text = build_mode.read_text(encoding="utf-8")
-    required_marker = "VERIFIED:" if args.mode == "verified" else "GATE CLOSED:"
+    required_marker = {
+        "verified": "VERIFIED:",
+        "experimental-live": "EXPERIMENTAL LIVE:",
+        "gate-closed": "GATE CLOSED:",
+    }[args.mode]
     if required_marker not in mode_text:
         raise SystemExit(
             f"Build-mode evidence does not contain {required_marker!r}: {build_mode}"

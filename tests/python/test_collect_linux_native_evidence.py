@@ -18,6 +18,7 @@ from collect_linux_native_evidence import (  # noqa: E402
     is_relevant_symbol,
     load_manifest,
     read_elf,
+    scan_string_anchors,
     scan_symbols,
     verify_identity,
 )
@@ -107,6 +108,18 @@ def test_builtin_elf_scanner_selects_only_relevant_defined_symbols(
             "rva": 0x1A20,
             "rva_hex": "0x1a20",
             "size": 0x4F,
+        }
+    ]
+
+    anchors = scan_string_anchors(binary, sections)
+    assert anchors == [
+        {
+            "file_offset": ELF_HEADER.size + 1,
+            "file_offset_hex": f"0x{ELF_HEADER.size + 1:x}",
+            "rva": 1,
+            "rva_hex": "0x1",
+            "section": "",
+            "text": "_ZN17DynamicProperties18getDynamicPropertyEv",
         }
     ]
 

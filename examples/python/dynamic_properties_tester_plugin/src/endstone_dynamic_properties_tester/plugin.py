@@ -522,15 +522,66 @@ class DynamicPropertiesTesterPlugin(Plugin):
             mutation=True,
         )
 
-    def _require_complete_service(self, bridge: Any) -> dict[str, Any]:
+    def _require_complete_service(
+        self,
+        bridge: Any,
+        targets: list[tuple[str, dict[str, Any]]] | None = None,
+    ) -> dict[str, Any]:
         status = dict(bridge.status(self.server))
-        if (
-            status.get("available") is not True
-            or status.get("complete_control") is not True
-        ):
+        if status.get("available") is not True:
             raise TestFailure(
-                "native service is not complete-control ready; no mutation was attempted: "
+                "native service is unavailable; no mutation was attempted: "
                 + str(status.get("message") or status.get("adapter") or "unavailable")
+            )
+        if status.get("complete_control") is True:
+            return status
+        if status.get("operational_live") is not True:
+            raise TestFailure(
+                "native service is not live-test ready; no mutation was attempted: "
+                + str(status.get("message") or status.get("adapter") or "unavailable")
+            )
+
+        capabilities = status.get("capabilities")
+        if not isinstance(capabilities, dict):
+            raise TestFailure("native service returned no capability map")
+        required_operations = {
+            "read",
+            "write",
+            "remove",
+            "clear",
+            "list_ids",
+            "list_collections",
+            "byte_count",
+            "persistence_flush",
+            "exact_build_match",
+            "exact_binary_hash_match",
+            "symbols_validated",
+        }
+        missing = sorted(
+            name for name in required_operations if capabilities.get(name) is not True
+        )
+        target_capability = {
+            "world": "world",
+            "online_player": "online_players",
+            "offline_player": "offline_players",
+            "loaded_entity": "loaded_entities",
+            "stored_entity": "stored_entities",
+            "player_inventory_slot": "player_inventory_items",
+            "player_armor_slot": "player_armor_items",
+            "player_offhand_slot": "player_offhand_items",
+            "player_ender_chest_slot": "player_ender_chest_items",
+            "block_container_slot": "block_container_items",
+            "dropped_item": "dropped_items",
+            "block_entity": "block_entities",
+        }
+        for label, target in targets or []:
+            capability = target_capability.get(str(target.get("kind", "")))
+            if capability is None or capabilities.get(capability) is not True:
+                missing.append(f"{label}:{capability or 'unknown_target'}")
+        if missing:
+            raise TestFailure(
+                "selected live test requires unavailable capabilities: "
+                + ", ".join(missing)
             )
         return status
 
@@ -735,7 +786,7 @@ class DynamicPropertiesTesterPlugin(Plugin):
         )
         self._save(report)
         try:
-            service_status = self._require_complete_service(bridge)
+            service_status = self._require_complete_service(bridge, targets)
             report["service_status"] = self._json_safe(service_status)
             # Preflight every selected target before the first mutation.
             for label, target in targets:
@@ -770,7 +821,9 @@ class DynamicPropertiesTesterPlugin(Plugin):
         self._save(report)
         try:
             report["service_status"] = self._json_safe(
-                self._require_complete_service(bridge)
+                self._require_complete_service(
+                    bridge, [("world", self._world_target())]
+                )
             )
             capture_response, snapshot = self._capture(bridge, report, target)
             if self._properties(snapshot):
@@ -851,7 +904,9 @@ class DynamicPropertiesTesterPlugin(Plugin):
             )
             return True
         try:
-            self._require_complete_service(bridge)
+            self._require_complete_service(
+                bridge, [("world", self._world_target())]
+            )
             resources = report.get("resources")
             if not isinstance(resources, list):
                 raise TestFailure("persistence checkpoint resources are malformed")
@@ -1095,7 +1150,7 @@ class DynamicPropertiesTesterPlugin(Plugin):
         scope = args[0].casefold()
         try:
             targets = self._targets(scope, sender)
-            service_status = self._require_complete_service(bridge)
+            service_status = self._require_complete_service(bridge, targets)
             report = new_report(
                 mode="inventory",
                 operator=self._sender_name(sender),

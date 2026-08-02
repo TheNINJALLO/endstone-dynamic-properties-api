@@ -15,7 +15,7 @@ from uuid import uuid4
 
 
 SCHEMA = 1
-TESTER_VERSION = "0.1.0a2"
+TESTER_VERSION = "0.1.0a3"
 COLLECTION = "endstone-plugin:dynamic-properties-tester:acceptance"
 RUN_ID = re.compile(r"^[0-9a-f]{32}$")
 
