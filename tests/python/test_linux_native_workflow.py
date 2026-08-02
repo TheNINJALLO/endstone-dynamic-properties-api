@@ -27,6 +27,16 @@ def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     assert "GLIBC_2.35 ceiling" in source
 
 
+def test_linux_push_and_release_run_disposable_two_boot_acceptance() -> None:
+    source = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "python -m pip install 'endstone==0.11.6'" in source
+    assert "scripts/run_live_server_acceptance.py" in source
+    assert '--server-dir "$RUNNER_TEMP/dynamic-properties-live-bds"' in source
+    assert "if: github.event_name != 'pull_request'" in source
+    assert "name: linux-live-acceptance" in source
+
+
 def test_linux_workflow_cannot_label_an_incomplete_gate_verified() -> None:
     source = WORKFLOW.read_text(encoding="utf-8")
 
