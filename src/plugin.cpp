@@ -2,7 +2,7 @@
 #include "endstone_dynamic_properties/live_service.h"
 #include "endstone_dynamic_properties/version.h"
 
-#include <endstone/endstone.hpp>
+#include <endstone/plugin/plugin.h>
 #include <endstone/plugin/service_manager.h>
 #include <endstone/plugin/service_priority.h>
 

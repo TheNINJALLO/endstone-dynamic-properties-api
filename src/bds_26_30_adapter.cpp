@@ -4,7 +4,7 @@
 #include "endstone_dynamic_properties/native_binary_identity.h"
 #include "endstone_dynamic_properties/native_manifest.h"
 
-#include <endstone/endstone.hpp>
+#include <endstone/server.h>
 
 #include <algorithm>
 #include <cctype>
