@@ -58,13 +58,18 @@ Create a Conan 2 default profile once if the machine does not already have one:
 
 ```bash
 conan profile detect
+conan remote add endstone https://conan.cloudsmith.io/endstone/conan/ \
+  --index 0 --force
 ```
+
+The Endstone remote supplies the project-specific `funchook` and RakNet source
+recipes that are not published by Conan Center.
 
 ```bash
 conan install . -of build-conan --build=missing \
   -s build_type=Release \
   -s compiler.cppstd=20 \
-  -o bds_build=1.26.33
+  -o '&:bds_build=1.26.33'
 
 cmake -S . -B build-exact \
   -DCMAKE_TOOLCHAIN_FILE=build-conan/conan_toolchain.cmake \
