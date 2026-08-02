@@ -6,6 +6,8 @@
 #include <endstone/plugin/service_manager.h>
 #include <endstone/plugin/service_priority.h>
 
+#include <algorithm>
+#include <cstring>
 #include <memory>
 #include <string>
 
@@ -80,6 +82,32 @@ private:
     std::shared_ptr<endstone_dynamic_properties::DynamicPropertyService> service_;
     std::shared_ptr<endstone_dynamic_properties::LiveDynamicPropertyServiceProvider> provider_;
 };
+
+#if ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 && defined(__linux__)
+extern "C" __attribute__((visibility("default"))) int
+endstone_dynamic_properties_probe_external_hooks_v1(
+    const char *world_id,
+    const char *collection,
+    const char *key_prefix,
+    endstone_dynamic_properties::ExperimentalExternalHookProbeWireResult *wire) {
+    using namespace endstone_dynamic_properties;
+    if (!world_id || !collection || !key_prefix || !wire) return 0;
+    *wire = {};
+    wire->struct_size = sizeof(*wire);
+    const auto result = probeExperimentalLiveBds2633ExternalHooks(
+        CollectionRef{DynamicPropertyTarget::world(world_id), collection}, key_prefix);
+    wire->available = result.available;
+    wire->set_intercepted = result.set_intercepted;
+    wire->remove_intercepted = result.remove_intercepted;
+    wire->clear_intercepted = result.clear_intercepted;
+    wire->cancellation_blocked = result.cancellation_blocked;
+    wire->cleanup_confirmed = result.cleanup_confirmed;
+    const auto message_size = std::min(result.message.size(), sizeof(wire->message) - 1);
+    std::memcpy(wire->message, result.message.data(), message_size);
+    wire->message[message_size] = '\0';
+    return result.ok() ? 1 : 0;
+}
+#endif
 
 ENDSTONE_PLUGIN(
     "dynamic_properties_api",

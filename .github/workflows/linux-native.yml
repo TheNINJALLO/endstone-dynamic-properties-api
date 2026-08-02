@@ -171,6 +171,8 @@ jobs:
           test -n "$bridge"
           test -s "$bridge"
           file "$plugin" | grep -F "ELF 64-bit LSB shared object, x86-64"
+          nm -D --defined-only "$plugin" \
+            | grep -F "endstone_dynamic_properties_probe_external_hooks_v1"
           if readelf -d "$plugin" | grep -E '(RPATH|RUNPATH)'; then
             echo "Installed plugin contains a forbidden RPATH/RUNPATH" >&2
             exit 1

@@ -24,6 +24,7 @@ def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     assert "scripts/package_native_release.py" in source
     assert "inputs.source_date_epoch || '315532800'" in source
     assert "ELF 64-bit LSB shared object, x86-64" in source
+    assert "endstone_dynamic_properties_probe_external_hooks_v1" in source
     assert "dpkg --compare-versions" in source
     assert "GLIBC_2.35 ceiling" in source
 

@@ -7,14 +7,22 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#if defined(__linux__)
+#include <dlfcn.h>
+#include <link.h>
+#endif
+
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <deque>
 #include <initializer_list>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -764,28 +772,70 @@ py::dict probeExternalHooks(
             "external hook probe requires a bounded dptest.hook.* key prefix");
     }
 
-    ExperimentalExternalHookProbeResult result;
+    ExperimentalExternalHookProbeWireResult result;
+    const auto set_message = [&](std::string_view message) {
+        const auto size = std::min(message.size(), sizeof(result.message) - 1);
+        std::memcpy(result.message, message.data(), size);
+        result.message[size] = '\0';
+    };
 #if ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633 && defined(__linux__)
     if (!loadService(server)) {
-        result.message = "service unavailable";
+        set_message("service unavailable");
     } else {
-        result = probeExperimentalLiveBds2633ExternalHooks(
-            CollectionRef{parseTarget(target), collection}, key_prefix);
+        const auto parsed_target = parseTarget(target);
+        if (parsed_target.kind != TargetKind::World) {
+            throw py::value_error("external hook probe currently requires a world target");
+        }
+        struct ModuleSearch {
+            std::string path;
+        } search;
+        const auto callback = [](dl_phdr_info *info, std::size_t, void *data) {
+            if (!info || !info->dlpi_name || !data) return 0;
+            const std::string_view name = info->dlpi_name;
+            if (name.find("endstone_dynamic_properties_api") == std::string_view::npos ||
+                !name.ends_with(".so")) {
+                return 0;
+            }
+            static_cast<ModuleSearch *>(data)->path = name;
+            return 1;
+        };
+        dl_iterate_phdr(callback, &search);
+        void *handle = search.path.empty()
+            ? nullptr
+            : dlopen(search.path.c_str(), RTLD_NOW | RTLD_NOLOAD);
+        auto probe = handle
+            ? reinterpret_cast<ExperimentalExternalHookProbeFunction>(
+                  dlsym(handle, ExperimentalExternalHookProbeSymbol))
+            : nullptr;
+        if (!probe) {
+            set_message("plugin probe symbol unavailable");
+        } else {
+            static_cast<void>(probe(
+                parsed_target.world_id.c_str(), collection.c_str(),
+                key_prefix.c_str(), &result));
+        }
+        if (handle) dlclose(handle);
     }
 #else
     static_cast<void>(server);
     static_cast<void>(target);
-    result.message = "external hook probe is unavailable in this build";
+    set_message("external hook probe is unavailable in this build");
 #endif
+    if (result.struct_size != 0 && result.struct_size != sizeof(result)) {
+        throw std::runtime_error("external hook probe ABI size mismatch");
+    }
     py::dict out;
-    out["ok"] = result.ok();
-    out["available"] = result.available;
-    out["set_intercepted"] = result.set_intercepted;
-    out["remove_intercepted"] = result.remove_intercepted;
-    out["clear_intercepted"] = result.clear_intercepted;
-    out["cancellation_blocked"] = result.cancellation_blocked;
-    out["cleanup_confirmed"] = result.cleanup_confirmed;
-    out["message"] = result.message;
+    const bool ok = result.available && result.set_intercepted &&
+                    result.remove_intercepted && result.clear_intercepted &&
+                    result.cancellation_blocked && result.cleanup_confirmed;
+    out["ok"] = ok;
+    out["available"] = result.available != 0;
+    out["set_intercepted"] = result.set_intercepted != 0;
+    out["remove_intercepted"] = result.remove_intercepted != 0;
+    out["clear_intercepted"] = result.clear_intercepted != 0;
+    out["cancellation_blocked"] = result.cancellation_blocked != 0;
+    out["cleanup_confirmed"] = result.cleanup_confirmed != 0;
+    out["message"] = std::string(result.message);
     return out;
 }
 

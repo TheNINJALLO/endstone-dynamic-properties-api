@@ -2,6 +2,7 @@
 
 #include "endstone_dynamic_properties/adapter.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -28,6 +29,26 @@ struct ExperimentalExternalHookProbeResult {
                clear_intercepted && cancellation_blocked && cleanup_confirmed;
     }
 };
+
+inline constexpr char ExperimentalExternalHookProbeSymbol[] =
+    "endstone_dynamic_properties_probe_external_hooks_v1";
+
+struct ExperimentalExternalHookProbeWireResult {
+    std::uint32_t struct_size{};
+    std::uint32_t available{};
+    std::uint32_t set_intercepted{};
+    std::uint32_t remove_intercepted{};
+    std::uint32_t clear_intercepted{};
+    std::uint32_t cancellation_blocked{};
+    std::uint32_t cleanup_confirmed{};
+    char message[256]{};
+};
+
+using ExperimentalExternalHookProbeFunction = int (*)(
+    const char *world_id,
+    const char *collection,
+    const char *key_prefix,
+    ExperimentalExternalHookProbeWireResult *result);
 
 struct NativeActivationReport {
     bool runtime_version_match{};
