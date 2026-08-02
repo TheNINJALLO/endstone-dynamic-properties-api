@@ -281,6 +281,9 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_TESTS)
             "-DMULTI_CONFIG=${ENDSTONE_DYNAMIC_PROPERTIES_CONSUMER_MULTI_CONFIG}"
             "-DCONFIG=$<CONFIG>"
             "-DCTEST_COMMAND=${CMAKE_CTEST_COMMAND}"
+            "-DCXX_COMPILER=${CMAKE_CXX_COMPILER}"
+            "-DCXX_FLAGS=${CMAKE_CXX_FLAGS}"
+            "-DEXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}"
             -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/consumer/RunInstalledConsumer.cmake"
     )
     set_tests_properties(dynamic_properties_installed_consumer PROPERTIES

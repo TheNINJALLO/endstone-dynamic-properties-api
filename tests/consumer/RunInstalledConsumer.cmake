@@ -5,7 +5,8 @@ foreach(required_variable
         CONSUMER_SOURCE_DIR
         WORK_ROOT
         GENERATOR
-        CTEST_COMMAND)
+        CTEST_COMMAND
+        CXX_COMPILER)
     if(NOT DEFINED ${required_variable} OR "${${required_variable}}" STREQUAL "")
         message(FATAL_ERROR "${required_variable} is required")
     endif()
@@ -48,7 +49,15 @@ set(configure_command
     -B "${consumer_build_dir}"
     -G "${GENERATOR}"
     "-DCMAKE_PREFIX_PATH=${install_prefix}"
+    "-DCMAKE_CXX_COMPILER=${CXX_COMPILER}"
 )
+if(DEFINED CXX_FLAGS AND NOT CXX_FLAGS STREQUAL "")
+    list(APPEND configure_command "-DCMAKE_CXX_FLAGS=${CXX_FLAGS}")
+endif()
+if(DEFINED EXE_LINKER_FLAGS AND NOT EXE_LINKER_FLAGS STREQUAL "")
+    list(APPEND configure_command
+        "-DCMAKE_EXE_LINKER_FLAGS=${EXE_LINKER_FLAGS}")
+endif()
 if(DEFINED GENERATOR_PLATFORM AND NOT GENERATOR_PLATFORM STREQUAL "")
     list(APPEND configure_command -A "${GENERATOR_PLATFORM}")
 endif()
