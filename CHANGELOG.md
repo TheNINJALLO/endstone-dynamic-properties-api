@@ -4,6 +4,40 @@
 
 No changes yet.
 
+## 0.1.0-alpha.2 - 2026-07-30
+
+### Added
+
+- Recorded and enforced the exact Windows and Linux BDS executable identities
+  while keeping every native capability gate closed.
+- Added cross-bound validation between native manifests and their complete
+  stage-probe reports.
+- Added a package-local CPython 3.14 bridge and operator-only in-game tester for
+  live CRUD, successful edit, revision, cleanup, and restart-persistence
+  acceptance checks across all 12 configurable target families.
+- Added atomic tester checkpoints, integrity-sealed reports, guarded recovery,
+  and an exact-stage native wheel packager.
+- Added read-only tester-visible collection inventory and a bounded observer for
+  before/after mutations intercepted from Script API or other native callers.
+- Added a hosted Linux x86-64 build that emits the Endstone `.so` and matching
+  CPython 3.14 tester wheel, with unmistakable gate-closed versus verified
+  artifact modes.
+
+### Fixed
+
+- Corrected verified-adapter factory linkage and made the provider and tester
+  bridge share one compiled activation-gate implementation.
+- Required the exact CPython ABI and C++20 Conan dependency graph for native
+  builds.
+- Preserved tester cleanup ownership until remove/clear absence is confirmed
+  and durably flushed, guarded absent-collection creation races with revision
+  zero, and required a different server process for persistence verification.
+- Serialized tester mutations, made atomic-report temporary files collision
+  resistant, handled PID reuse with a process-incarnation token, and rejected
+  tester bridges whose machine architecture disagrees with the wheel tag.
+- Cached executable identity inspection so repeated status checks do not hash
+  the server executable on the main thread.
+
 ## 0.1.0-alpha.1 - 2026-07-29
 
 ### Added
@@ -40,5 +74,6 @@ No changes yet.
 - Kept missing, malformed, and forged verified native manifests fail-closed even during blocked-manifest inspection.
 - Normalized exact runtime metadata on the canonical BDS runtime `26.33` and required an exact draft-release asset set.
 
-[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.1...HEAD
+[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.2...HEAD
+[0.1.0-alpha.2]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.1

@@ -12,12 +12,11 @@
 class DynamicPropertiesApiPlugin : public endstone::Plugin {
 public:
     void onEnable() override {
-#if ENDSTONE_DYNAMIC_PROPERTIES_NATIVE_2630
-        adapter_ = endstone_dynamic_properties::makeBds2633DynamicPropertyAdapter(getServer());
-#else
+#if !ENDSTONE_DYNAMIC_PROPERTIES_NATIVE_2630
         getLogger().error("Dynamic Properties API package contains no BDS 26.30 native boundary");
         return;
-#endif
+#else
+        adapter_ = endstone_dynamic_properties::makeBds2633DynamicPropertyAdapter(getServer());
         if (!adapter_) {
             getLogger().error("Dynamic Properties API could not create its guarded native adapter");
             return;
@@ -55,6 +54,7 @@ public:
             " registered complete service " +
             std::string(endstone_dynamic_properties::DynamicPropertyServiceName) +
             " using " + service_->adapterName());
+#endif
     }
 
     void onDisable() override {

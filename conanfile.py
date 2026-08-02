@@ -1,4 +1,5 @@
 from conan import ConanFile
+from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMakeDeps, CMakeToolchain
 
 
@@ -36,6 +37,9 @@ class ExactEndstoneDependencies(ConanFile):
             self.requires("detours/cci.20220630")
         elif self.settings.os == "Linux":
             self.requires("libelf/0.8.13")
+
+    def validate(self):
+        check_min_cppstd(self, "20")
 
     def generate(self):
         CMakeDeps(self).generate()

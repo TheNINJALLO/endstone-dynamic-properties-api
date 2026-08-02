@@ -1,6 +1,6 @@
 # Build status
 
-Version: **0.1.0-alpha.1**
+Version: **0.1.0-alpha.2**
 
 ## Portable unified system
 
@@ -19,6 +19,14 @@ Version: **0.1.0-alpha.1**
 - Installed CMake package consumer (`EndstoneDynamicProperties::core`): passing.
 - Python wheel and source-distribution build metadata: configured.
 - GitHub CI and draft portable-release workflows: configured.
+- Operator-only CPython 3.14 live tester, atomic reports, guarded cleanup, and
+  exact-stage wheel packager: implemented.
+- Configured live acceptance targets cover all 12 target families; read-only
+  inventory, successful-edit checks, and bounded external-mutation capture are
+  implemented.
+- Hosted Linux x86-64 `.so` plus CPython 3.14 tester-wheel compilation is
+  configured. Until native proof activation, its artifact is visibly marked
+  gate-closed and is not deployable as a working service.
 
 ## Exact native bridge
 
@@ -26,7 +34,8 @@ Version: **0.1.0-alpha.1**
 - Runtime: `26.33`.
 - Endstone: `0.11.6`.
 - Windows and Linux archive identities: pinned.
-- Executable identities: intentionally empty pending private local inspection.
+- Exact Windows and Linux executable SHA-256/size identities: recorded and
+  enforced; identity evidence alone does not activate the native gate.
 - Required symbol manifest: present, unresolved.
 - Offline-player storage contract: not yet behavior-verified.
 - Stored-entity storage contract: not yet behavior-verified.
@@ -36,4 +45,8 @@ Version: **0.1.0-alpha.1**
 - Complete stage probe: not passed.
 - Live service registration: disabled by design.
 
-This alpha is a complete portable API/reference and activation package. It is not yet an installable working native server plugin, and the release workflow deliberately produces no native DLL/SO.
+This alpha is a complete portable API/reference and activation package. It is
+not yet an installable working native server plugin. The portable release
+workflow deliberately publishes no native DLL/SO; the separate native
+readiness workflow emits a non-deployable gate-closed `.so` only to validate
+the exact Linux compilation and packaging graph.

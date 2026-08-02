@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools==83.0.0", "wheel==0.47.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "endstone-dynamic-properties-tester"
+version = "0.1.0a2"
+description = "In-game acceptance and persistence tests for Endstone Dynamic Properties API"
+readme = "README.md"
+requires-python = "==3.14.*"
+dependencies = [
+    "endstone==0.11.6",
+]
+
+[project.entry-points."endstone"]
+"dynamic-properties-tester" = "endstone_dynamic_properties_tester:DynamicPropertiesTesterPlugin"
+
+[tool.setuptools]
+packages = ["endstone_dynamic_properties_tester", "endstone_dynamic_properties"]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+endstone_dynamic_properties_tester = [
+    "_endstone_dynamic_properties_live*.pyd",
+    "_endstone_dynamic_properties_live*.so",
+]
+endstone_dynamic_properties = ["py.typed"]

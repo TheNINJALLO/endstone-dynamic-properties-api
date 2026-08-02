@@ -4,7 +4,7 @@
 #include <string_view>
 
 #ifndef ENDSTONE_DYNAMIC_PROPERTIES_VERSION
-#define ENDSTONE_DYNAMIC_PROPERTIES_VERSION "0.1.0-alpha.1"
+#define ENDSTONE_DYNAMIC_PROPERTIES_VERSION "0.1.0-alpha.2"
 #endif
 
 namespace endstone_dynamic_properties {

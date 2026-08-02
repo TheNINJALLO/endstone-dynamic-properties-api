@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "endstone-dynamic-properties-api",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "release_kind": "portable-core-and-reference-prerelease",
   "native_plugin_included": false,
   "service": "endstone:dynamic-properties:v1",

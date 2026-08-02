@@ -18,6 +18,15 @@
 #endif
 
 namespace endstone_dynamic_properties {
+
+#if ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE
+// Implemented by the generated, stage-verified translation unit.  This must
+// have external linkage: declaring it in the anonymous namespace makes an
+// otherwise valid generated bridge impossible to link.
+std::shared_ptr<IDynamicPropertyAdapter> makeVerifiedBds2633DynamicPropertyAdapter(
+    endstone::Server &server);
+#endif
+
 namespace {
 
 std::string_view canonicalBdsBuild(std::string_view build) noexcept {
@@ -73,6 +82,14 @@ bool expectedEndstoneVersion(std::string_view runtime) noexcept {
                 validIdentifierList(suffix.substr(metadata + 1)));
     }
     return false;
+}
+
+const RuntimeExecutableIdentity &currentProcessExecutableIdentity() {
+    // Hashing the 200+ MB server executable on every status command stalls the
+    // server thread.  The process image cannot change during this process, so
+    // bind it once on first activation inspection and reuse that evidence.
+    static const RuntimeExecutableIdentity Identity = inspectCurrentProcessExecutable();
+    return Identity;
 }
 
 class GuardedBds2633DynamicPropertyAdapter final : public IDynamicPropertyAdapter {
@@ -171,11 +188,6 @@ private:
     NativeActivationReport report_;
 };
 
-#if ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE
-std::shared_ptr<IDynamicPropertyAdapter> makeVerifiedBds2633DynamicPropertyAdapter(
-    endstone::Server &server);
-#endif
-
 } // namespace
 
 NativeActivationReport inspectBds2633DynamicPropertyActivation(endstone::Server &server) {
@@ -192,7 +204,7 @@ NativeActivationReport inspectBds2633DynamicPropertyActivation(endstone::Server 
         ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE != 0;
 
     if (!generated::ExecutableSha256.empty() && generated::ExecutableSize != 0) {
-        const auto identity = inspectCurrentProcessExecutable();
+        const auto &identity = currentProcessExecutableIdentity();
         report.executable_hash_match =
             identity.ok() && identity.size == generated::ExecutableSize &&
             identity.sha256 == generated::ExecutableSha256;
@@ -209,7 +221,7 @@ NativeActivationReport inspectBds2633DynamicPropertyActivation(endstone::Server 
     if (!report.manifest_activated)
         report.failures.emplace_back("platform manifest is not activated");
     if (!report.executable_hash_match)
-        report.failures.emplace_back("executable SHA-256 mismatch or not activated");
+        report.failures.emplace_back("executable SHA-256/size mismatch");
     if (!report.symbols_validated)
         report.failures.emplace_back("native symbols are not behavior-verified");
     if (!report.storage_contracts_validated)

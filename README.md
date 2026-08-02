@@ -1,6 +1,6 @@
 # Endstone Dynamic Properties API
 
-**Release:** `v0.1.0-alpha.1`<br>
+**Release:** `v0.1.0-alpha.2`<br>
 **Service ABI:** `endstone:dynamic-properties:v1`<br>
 **Target:** Minecraft Bedrock Dedicated Server package `1.26.33.1`, runtime `26.33`, Endstone `v0.11.6`
 
@@ -41,6 +41,15 @@ The exact native bridge is intentionally fail-closed. The Endstone service does 
 7. The complete disposable-world probe passes on the target platform.
 
 A live-only subset cannot register under this ABI. This is deliberate: one service means one truthful capability contract.
+
+The source tree also includes an operator-only CPython 3.14 tester wheel. Its
+package-local native bridge exposes no in-memory fallback, its configured
+target file represents all 12 target families, and its mutating commands
+require explicit confirmation. The tester can inventory existing
+tester-visible collections and capture bounded before/after external-mutation
+events for the verified native hooks. See
+[`examples/python/dynamic_properties_tester_plugin/README.md`](examples/python/dynamic_properties_tester_plugin/README.md)
+and [`docs/BUILD_EXACT.md`](docs/BUILD_EXACT.md).
 
 ## Target examples
 
@@ -218,6 +227,16 @@ python tools/verify_native_manifest.py \
 python tools/activate_verified_manifest.py \
   native/manifests/linux-x64-1.26.33.1.json
 ```
+
+The `Linux native plugin and live tester` GitHub workflow compiles the actual
+Linux x86-64 Endstone entry point
+`endstone_dynamic_properties_bds_1_26_33.so` and its matching CPython 3.14
+tester wheel. While the checked-in native proof is incomplete, the uploaded
+artifact is explicitly named `linux-native-gate-closed`, contains a warning,
+and refuses to register the service. After the reviewed bridge, manifest, and
+stage report pass the same verifier, the unchanged workflow switches to a
+`linux-native-verified` artifact. A successful compile never opens the runtime
+gate by itself.
 
 ## Repository map
 
