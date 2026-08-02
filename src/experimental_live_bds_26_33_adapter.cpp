@@ -5,8 +5,6 @@
 #include "endstone_dynamic_properties/in_memory_adapter.h"
 #include "endstone_dynamic_properties/service.h"
 
-#include <bedrock/world/actor/actor_unique_id.h>
-#include <bedrock/world/level/level.h>
 #include <endstone/actor/actor.h>
 #include <endstone/level/level.h>
 #include <endstone/player.h>
@@ -50,6 +48,9 @@ constexpr std::uintptr_t ActorGetOrAddPropertiesRva = 0x09C71920;
 constexpr std::size_t EndstoneLevelHandleWord = 2;
 constexpr std::size_t ServerLevelDynamicPropertiesManagerOffset = 0x7A0;
 constexpr std::size_t ActorEntityContextOffset = 0x8;
+// ILevel's Itanium ABI vtable contains two destructor entries followed by the
+// methods in level_interface.h declaration order. fetchEntity is method 60.
+constexpr std::size_t ILevelFetchEntityVtableSlot = 61;
 
 struct NativeVec3 {
     float x{};
@@ -443,22 +444,32 @@ private:
         known_targets_.insert_or_assign(properties, target);
     }
 
-    [[nodiscard]] ::Level *minecraftLevel() const noexcept {
+    [[nodiscard]] void *minecraftLevel() const noexcept {
         auto *level = server_.getLevel();
         if (!level) return nullptr;
         // Endstone v0.11.6 EndstoneLevel has one polymorphic base followed by
         // server_ and level_ reference data members. Reading the exact private
         // handle avoids relying on a non-public exported C++ symbol.
-        ::Level *handle = nullptr;
+        void *handle = nullptr;
         const auto *address = reinterpret_cast<const std::byte *>(level) +
                               EndstoneLevelHandleWord * sizeof(void *);
         std::memcpy(&handle, address, sizeof(handle));
         return handle;
     }
 
-    [[nodiscard]] ::Actor *minecraftActor(std::int64_t unique_id) const noexcept {
+    [[nodiscard]] void *minecraftActor(std::int64_t unique_id) const noexcept {
         auto *level = minecraftLevel();
-        return level ? level->fetchEntity(ActorUniqueID{unique_id}, false) : nullptr;
+        if (!level) return nullptr;
+        const auto vtable = *reinterpret_cast<void ***>(level);
+        if (!vtable || !vtable[ILevelFetchEntityVtableSlot]) return nullptr;
+        struct NativeActorUniqueId {
+            std::int64_t raw_id;
+        };
+        using FetchEntityFunction = void *(*)(
+            const void *, NativeActorUniqueId, bool);
+        const auto fetch = reinterpret_cast<FetchEntityFunction>(
+            vtable[ILevelFetchEntityVtableSlot]);
+        return fetch(level, NativeActorUniqueId{unique_id}, false);
     }
 
     [[nodiscard]] ResolvedTarget resolveTarget(
@@ -477,7 +488,7 @@ private:
             void *manager = nullptr;
             std::memcpy(
                 &manager,
-                reinterpret_cast<const std::byte *>(level) +
+                static_cast<const std::byte *>(level) +
                     ServerLevelDynamicPropertiesManagerOffset,
                 sizeof(manager));
             if (!manager) {
@@ -535,7 +546,7 @@ private:
                     "BDS actor is no longer loaded"};
         }
         auto *entity_context =
-            reinterpret_cast<std::byte *>(actor) + ActorEntityContextOffset;
+            static_cast<std::byte *>(actor) + ActorEntityContextOffset;
         auto *properties = functions_.get_or_add_actor(entity_context);
         rememberTarget(properties, target);
         return properties

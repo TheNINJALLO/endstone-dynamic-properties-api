@@ -178,19 +178,11 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
         add_library(endstone_dynamic_properties_native_support STATIC
             ${DYNAMIC_PROPERTIES_NATIVE_SOURCES})
         target_include_directories(endstone_dynamic_properties_native_support
-            PUBLIC include
-            PRIVATE "${endstone_SOURCE_DIR}/src")
+            PUBLIC include)
         target_link_libraries(endstone_dynamic_properties_native_support PUBLIC
             endstone_dynamic_properties_core
             endstone::endstone
-            funchook::funchook
-            boost::boost
-            EnTT::EnTT
-            glm::glm
-            magic_enum::magic_enum
-            Microsoft.GSL::GSL
-            nonstd::expected-lite
-            raknet::raknet)
+            funchook::funchook)
         target_compile_definitions(endstone_dynamic_properties_native_support PRIVATE
             ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE}>
             ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633=$<BOOL:${ENDSTONE_DYNAMIC_PROPERTIES_EXPERIMENTAL_LIVE_2633}>)
