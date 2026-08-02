@@ -3,8 +3,10 @@
 This is the operator-only, CPython 3.14 acceptance wheel for Dynamic
 Properties API `0.1.0a3` on Endstone `0.11.6`. The wheel loads only its
 package-local `_endstone_dynamic_properties_live` extension. It has no
-in-memory or pure-Python fallback: when the complete native service is not
-available, every test command says so and performs no mutation.
+in-memory or pure-Python fallback. Mutation commands require either the
+complete native service or the exact-hash experimental live service, and each
+selected target must be enabled in the service capability map. Unsupported
+targets are reported before the tester performs any mutation.
 
 The release build vendors the matching typed public Python API in the same
 wheel so server plugins and the test harness cannot accidentally resolve a
@@ -50,8 +52,10 @@ old and current tester-owned values are retained in an integrity-sealed report.
 It does not bypass normal plugin collection isolation. `watch` starts a bounded
 native observer for before/after external-mutation events; `drain` atomically
 removes the queued events into a report and records if the 1,024-event queue
-overflowed. Watching proves interception only when the verified native hook
-capability is active.
+overflowed. Watching proves interception only when the service reports an
+active external-mutation hook capability. The exact-hash experimental live
+adapter enables that capability for its supported world, online-player, and
+loaded-entity targets.
 
 `persistence prepare` records a reload-stable, random server-process
 incarnation token. `persistence verify` refuses to proceed until that token has
