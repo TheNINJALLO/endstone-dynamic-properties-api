@@ -32,7 +32,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install --no-install-recommends \
-            clang-18 libc++-18-dev libc++abi-18-dev
+            clang-18 libc++-18-dev libc++abi-18-dev ninja-build
       - name: Install pinned native build tools
         run: python -m pip install -r .github/native-build-requirements.txt
       - name: Classify the exact native gate
@@ -50,6 +50,13 @@ jobs:
             echo "mode=gate-closed" >> "$GITHUB_OUTPUT"
             echo "verified_bridge=OFF" >> "$GITHUB_OUTPUT"
           fi
+      - name: Restore Conan package cache
+        id: conan-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.conan2/p
+          key: linux-x64-conan-clang18-${{ hashFiles('conanfile.py', 'native/profiles/linux-x64', '.github/native-build-requirements.txt') }}
+          restore-keys: linux-x64-conan-clang18-
       - name: Resolve Conan dependencies
         shell: bash
         run: |
@@ -62,11 +69,17 @@ jobs:
             -pr:h native/profiles/linux-x64 \
             -pr:b native/profiles/linux-x64 \
             -o '&:bds_build=1.26.33'
+      - name: Save Conan package cache
+        if: steps.conan-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.conan2/p
+          key: ${{ steps.conan-cache.outputs.cache-primary-key }}
       - name: Configure the exact Linux plugin graph
         shell: bash
         run: |
           set -euo pipefail
-          cmake -S . -B build-linux-native \
+          cmake -S . -B build-linux-native -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE="$PWD/build-conan/conan_toolchain.cmake" \
             -DCMAKE_BUILD_TYPE=Release \
             -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON \

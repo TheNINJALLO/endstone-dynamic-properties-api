@@ -61,7 +61,7 @@ source-recipe remote:
 ```bash
 sudo apt-get update
 sudo apt-get install --no-install-recommends \
-  clang-18 libc++-18-dev libc++abi-18-dev
+  clang-18 libc++-18-dev libc++abi-18-dev ninja-build
 conan remote add endstone https://conan.cloudsmith.io/endstone/conan/ \
   --index 0 --force
 ```
@@ -75,7 +75,7 @@ conan install . -of build-conan --build=missing \
   -pr:b native/profiles/linux-x64 \
   -o '&:bds_build=1.26.33'
 
-cmake -S . -B build-exact \
+cmake -S . -B build-exact -G Ninja \
   -DCMAKE_TOOLCHAIN_FILE=build-conan/conan_toolchain.cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN=ON \
