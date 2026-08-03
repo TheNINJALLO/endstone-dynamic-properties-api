@@ -1,4 +1,5 @@
 from conan import ConanFile
+from conan.tools.build import check_min_cppstd
 from conan.tools.cmake import CMakeDeps, CMakeToolchain
 
 
@@ -36,6 +37,16 @@ class ExactEndstoneDependencies(ConanFile):
             self.requires("detours/cci.20220630")
         elif self.settings.os == "Linux":
             self.requires("libelf/0.8.13")
+
+    def configure(self):
+        if self.settings.os == "Linux":
+            # cpptrace's host auto-probe does not reliably discover an unwind
+            # backend with Clang 18/libc++ on the Ubuntu 22.04 release floor.
+            # Select its declared Conan backend so libunwind is propagated.
+            self.options["cpptrace"].unwind = "libunwind"
+
+    def validate(self):
+        check_min_cppstd(self, "20")
 
     def generate(self):
         CMakeDeps(self).generate()

@@ -8,8 +8,8 @@
   "archive_sha256": "fc6c0ad6f82cfb11c65c6756a1a8e49b21ffa8cc203da587df59df365d82a2ad",
   "executable": {
     "filename": "bedrock_server.exe",
-    "sha256": "",
-    "size": 0
+    "sha256": "4a0b867eee6c24310f405410b17e9794441b81ed8f2976cdd4cef54d0c441829",
+    "size": 207171408
   },
   "abi": {
     "reviewed": false,

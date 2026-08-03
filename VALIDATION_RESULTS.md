@@ -1,7 +1,7 @@
 # Validation results
 
-Release metadata: `0.1.0-alpha.1`<br>
-Working-tree validation date: `2026-07-29`
+Release metadata: `0.1.0-alpha.5`<br>
+Working-tree validation date: `2026-08-02`
 
 ## Passed locally
 
@@ -11,10 +11,8 @@ Working-tree validation date: `2026-07-29`
 - Rejection of incomplete native activation.
 - Strict public/tool manifest-verifier parity, including omitted proof sections and duplicate symbols.
 - Strict stage-probe rejection of empty result sets and non-hexadecimal evidence hashes.
-- Python 3.11 package compilation and tests: `51/51` passed.
-- MSVC 19.44 C++20 Debug compilation with warnings as errors.
+- Python tests: `145/145` passed.
 - MSVC 19.44 C++20 Release compilation with warnings as errors.
-- Debug CTest: `2/2` passed.
 - Release CTest: `2/2` passed.
 - Clean installed-SDK `find_package()` consumer build and execution.
 - C++ complete-control example execution.
@@ -23,12 +21,39 @@ Working-tree validation date: `2026-07-29`
 - Pure-Python wheel isolated installation and functional smoke test.
 - Portable Windows SDK installation, installed-tool smoke test, and repeatable byte-identical ZIP packaging.
 - CMake preset parsing and GitHub workflow YAML parsing.
+- MSVC C++20 syntax compilation of the live pybind bridge against the exact
+  pinned Endstone `0.11.6` headers, with project warnings treated as errors.
+- Alpha.2 release metadata/tag consistency and native fail-closed policy.
+- Tester bridge-loader, command-schema, checkpoint/report, durable
+  cleanup-ownership, mutation-serialization, creation-race,
+  process-incarnation, persistence-ambiguity, and native-wheel machine-tag
+  regression tests.
+- All-target configuration validation, existing-property inventory, successful
+  edit/readback, external-event drain/report, and Linux workflow gate-mode
+  regression tests.
+- Native release packaging rejects either the plugin or tester bridge when its
+  imported glibc symbols exceed `GLIBC_2.35`; the earlier Ubuntu 24.04 artifact
+  was confirmed rejected because it imports `GLIBC_2.38`.
+- The tester-wheel packager requires all three LLVM 18 runtime libraries and
+  the release packager validates their x86-64 ELF format, glibc imports, and
+  bundled license. Hosted Linux CI additionally checks `$ORIGIN` resolution.
 
 ## Configured CI coverage
 
-The repository workflow is configured to repeat policy and Python tests on Python 3.10, 3.11, and 3.14; build/test with GCC, Clang, and MSVC; run Clang AddressSanitizer and UndefinedBehaviorSanitizer; validate the installed CMake consumer; build/check Python distributions; and upload test artifacts.
+The repository workflows are configured to repeat policy and Python tests on
+Python 3.10, 3.11, and 3.14; build/test with GCC, Clang, and MSVC; run Clang
+AddressSanitizer and UndefinedBehaviorSanitizer; validate the installed CMake
+consumer; build/check Python distributions; and compile/inspect the Linux
+x86-64 Endstone `.so` plus matching CPython 3.14 tester wheel.
 
 These hosted jobs must pass on the exact commit before it is tagged. Earlier bundle results are not treated as validation of the modified working tree.
+
+The exact alpha.3 head also passed the Ubuntu 22.04 disposable-server gate on
+the official BDS `1.26.33.1` executable. Four integrity-sealed reports cover
+existing collection inventory, a 19-check world CRUD/value/revision suite,
+native external set/remove/clear interception with cancellation, and a clean
+two-process persistence round trip. The resulting plugin and tester bridge
+also passed the `GLIBC_2.35` import ceiling.
 
 ## Portable behavior covered
 
@@ -50,17 +75,28 @@ These hosted jobs must pass on the exact commit before it is tagged. Earlier bun
 
 ## Native status
 
-The exact BDS bridge is not activated and no installable native DLL/SO is produced.
+The exact-hash Linux experimental bridge now registers a world-only live
+capability. Online-player and loaded-entity capabilities fail closed after the
+alpha.4 crash demonstrated that the private actor `EntityContext` boundary was
+unsafe. Hosted CI and tagged releases emit a visibly marked `experimental-live`
+ELF, its ABI-matched tester wheel, and a combined install-layout bundle. The
+verified complete-control gate remains closed.
+
+The official Windows and Linux executable SHA-256/size identities are recorded
+and enforced by both manifest verification and the compiled runtime gate. The
+experimental adapter binds the exact Linux world dynamic-property core and
+mutation-hook paths. Its disposable Linux world and
+hook stage now passes; this is experimental target-scoped evidence and does not
+open the all-target complete-control gate.
 
 Still required independently for Windows and Linux BDS package `1.26.33.1`:
 
-- executable SHA-256 and size;
-- exact symbol RVAs and fingerprints;
-- signature and behavior review for every required symbol;
+- remaining item, block, storage, and persistence symbol contracts;
+- signature and behavior review for every verified-release symbol;
 - offline-player and stored-entity storage contract review;
 - supported block dynamic-property contract review;
-- external set/remove/clear hook review;
 - reviewed `src/verified_bds_26_30_adapter.cpp` source and SHA-256;
-- complete disposable-world stage probe with retained evidence.
+- complete all-target disposable-world stage probe with retained evidence.
 
-The plugin refuses to register `endstone:dynamic-properties:v1` until all proof gates pass together.
+The plugin exposes `complete_control=false` until all proof gates pass together;
+unimplemented target capabilities remain false.

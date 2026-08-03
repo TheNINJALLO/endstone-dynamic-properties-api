@@ -8,8 +8,8 @@
   "archive_sha256": "68c52ababde987741029de091c09cd736fe894bc1fe99cf20f9ed5c659f0c180",
   "executable": {
     "filename": "bedrock_server",
-    "sha256": "",
-    "size": 0
+    "sha256": "61995841f21baf9bfab96e0d9b0cb798501dcc9789dab68e496f3b8e3bc83375",
+    "size": 232842872
   },
   "abi": {
     "reviewed": false,

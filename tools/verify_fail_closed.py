@@ -11,8 +11,6 @@ adapter = (ROOT / "src/bds_26_30_adapter.cpp").read_text(encoding="utf-8")
 cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")
 failures: list[str] = []
 for required in (
-    'ExecutableSha256 = ""',
-    'ExecutableSize = 0',
     'NativeManifestActivated = false',
     'ExactBuildMatch = false',
     'ExactBinaryHashMatch = false',
@@ -23,12 +21,30 @@ for required in (
 ):
     if required not in header:
         failures.append(f"generated header is not closed: {required}")
-if "if (!service_->capabilities().completeControl())" not in plugin or "refused to register" not in plugin:
-    failures.append("complete-control service registration refusal is missing")
+for required_identity in (
+    "4a0b867eee6c24310f405410b17e9794441b81ed8f2976cdd4cef54d0c441829",
+    "61995841f21baf9bfab96e0d9b0cb798501dcc9789dab68e496f3b8e3bc83375",
+    "207171408ULL",
+    "232842872ULL",
+):
+    if required_identity not in header:
+        failures.append(
+            f"generated header lacks exact executable identity: {required_identity}"
+        )
+if (
+    "capabilities.completeControl()" not in plugin
+    or "hasExperimentalLiveControl(capabilities)" not in plugin
+    or "refused to register" not in plugin
+):
+    failures.append("verified/experimental service registration guards are missing")
 if "BinaryIdentityMismatch" not in adapter or "SymbolValidationFailed" not in adapter:
     failures.append("guarded native adapter failure modes are missing")
 if "ENDSTONE_DYNAMIC_PROPERTIES_VERIFIED_NATIVE_BRIDGE" not in cmake:
     failures.append("verified native bridge option is missing")
+if "if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_NATIVE_2630)" not in cmake:
+    failures.append("guarded native support is not conditional on its build option")
+if "#if !ENDSTONE_DYNAMIC_PROPERTIES_NATIVE_2630" not in plugin:
+    failures.append("provider code is not compile-guarded when native support is disabled")
 for manifest in (ROOT / "native/manifests").glob("*.json"):
     data = json.loads(manifest.read_text(encoding="utf-8"))
     if data.get("status") != "blocked":
