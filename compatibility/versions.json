@@ -8,8 +8,8 @@
       "bds_package": "1.26.33.1",
       "bds_runtime": "26.33",
       "endstone": "0.11.6",
-      "status": "guarded-source-adapter",
-      "registration": "disabled-until-complete-control-probe"
+      "status": "experimental-live-world-only",
+      "registration": "exact-hash-world-only"
     }
   ],
   "complete_control_requires": [

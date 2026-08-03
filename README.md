@@ -1,6 +1,6 @@
 # Endstone Dynamic Properties API
 
-**Release:** `v0.1.0-alpha.4`<br>
+**Release:** `v0.1.0-alpha.5`<br>
 **Service ABI:** `endstone:dynamic-properties:v1`<br>
 **Target:** Minecraft Bedrock Dedicated Server package `1.26.33.1`, runtime `26.33`, Endstone `v0.11.6`
 
@@ -25,19 +25,20 @@ Supported public values are `bool`, finite `double`, UTF-8 `string`, and `Vector
 ## Current release status
 
 > **Experimental live alpha:** the Linux plugin registers a real, exact-hash
-> adapter for world, online-player, and loaded-entity dynamic properties on BDS
-> `1.26.33.1` with Endstone `0.11.6`. It supports existing-property inventory,
-> CRUD, revisions, bulk/copy/move/rename/import operations, rollback
-> transactions, persistence testing, and cancellable set/remove/clear hooks.
-> Offline/stored, item-stack, and block targets remain disabled in the reported
-> capability map until their native paths pass live testing.
+> world dynamic-property adapter on BDS `1.26.33.1` with Endstone `0.11.6`. It
+> supports existing-property inventory, CRUD, revisions,
+> bulk/copy/move/rename/import operations, rollback transactions, persistence
+> testing, and cancellable set/remove/clear hooks. Alpha.5 explicitly disables
+> online-player and loaded-entity capabilities after live alpha.4 crash evidence
+> proved the actor `EntityContext` boundary unsafe. Every non-world target now
+> fails closed without entering actor resolution.
 
 The **portable C++ API, Python reference package, in-memory complete-control adapter, validation, access isolation, events, audits, export/import, migrations, optimistic revisions, and atomic rollback transactions are implemented and tested**.
 
 Mutation requests are defensively copied, callbacks run outside commit locks, and final limit validation is serialized across services sharing an adapter. Event-listener failures cannot suppress later listeners or erase the audit of an already committed write. Audit-sink failures are reported without replacing the committed result.
 
 The verified complete-control bridge remains intentionally fail-closed. The
-alpha.4 experimental Linux adapter is a separate, visibly named test mode: it
+alpha.5 experimental Linux adapter is a separate, visibly named test mode: it
 registers only after the exact executable and runtime identity match, and it
 reports only the target families it actually implements. A future verified
 release must still prove every target family in one activation:

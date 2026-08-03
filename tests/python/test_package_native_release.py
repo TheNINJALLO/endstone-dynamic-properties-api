@@ -12,11 +12,11 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "package_native_release.py"
 WHEEL_NAME = (
-    "endstone_dynamic_properties_tester-0.1.0a4-"
+    "endstone_dynamic_properties_tester-0.1.0a5-"
     "cp314-cp314-linux_x86_64.whl"
 )
 RELEASE_SUFFIX = (
-    "0.1.0-alpha.4-bds-1.26.33.1-endstone-0.11.6-"
+    "0.1.0-alpha.5-bds-1.26.33.1-endstone-0.11.6-"
     "linux-x86_64-glibc-2.35-experimental-live"
 )
 
@@ -54,7 +54,7 @@ def make_stage(
             "Apache License 2.0 with LLVM Exceptions\n",
         )
         archive.writestr(
-            "endstone_dynamic_properties_tester-0.1.0a4.dist-info/WHEEL",
+            "endstone_dynamic_properties_tester-0.1.0a5.dist-info/WHEEL",
             "Wheel-Version: 1.0\n"
             "Generator: test\n"
             "Root-Is-Purelib: false\n"

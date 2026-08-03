@@ -257,7 +257,7 @@ def _run(args: argparse.Namespace) -> None:
 
     first = ServerSession(args.endstone, server_dir, evidence_dir / "server-first.log")
     try:
-        first.wait_for("registered experimental live world/player/entity service", 300)
+        first.wait_for("registered experimental live world-only service", 300)
         first.wait_for("Dynamic Properties tester enabled with its exact live bridge", 90)
         first.command("dptest status", "Native Dynamic Properties status:")
         first.command(
@@ -279,7 +279,7 @@ def _run(args: argparse.Namespace) -> None:
 
     second = ServerSession(args.endstone, server_dir, evidence_dir / "server-second.log")
     try:
-        second.wait_for("registered experimental live world/player/entity service", 180)
+        second.wait_for("registered experimental live world-only service", 180)
         second.wait_for("Dynamic Properties tester enabled with its exact live bridge", 90)
         second.command(
             "dptest persistence verify",

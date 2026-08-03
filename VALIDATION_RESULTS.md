@@ -1,6 +1,6 @@
 # Validation results
 
-Release metadata: `0.1.0-alpha.4`<br>
+Release metadata: `0.1.0-alpha.5`<br>
 Working-tree validation date: `2026-08-02`
 
 ## Passed locally
@@ -11,7 +11,7 @@ Working-tree validation date: `2026-08-02`
 - Rejection of incomplete native activation.
 - Strict public/tool manifest-verifier parity, including omitted proof sections and duplicate symbols.
 - Strict stage-probe rejection of empty result sets and non-hexadecimal evidence hashes.
-- Python tests: `144/144` passed.
+- Python tests: `145/145` passed.
 - MSVC 19.44 C++20 Release compilation with warnings as errors.
 - Release CTest: `2/2` passed.
 - Clean installed-SDK `find_package()` consumer build and execution.
@@ -75,15 +75,17 @@ also passed the `GLIBC_2.35` import ceiling.
 
 ## Native status
 
-The exact-hash Linux experimental bridge now registers world, online-player,
-and loaded-entity capabilities. Hosted CI and tagged releases emit a visibly
-marked `experimental-live` ELF, its ABI-matched tester wheel, and a combined
-install-layout bundle. The verified complete-control gate remains closed.
+The exact-hash Linux experimental bridge now registers a world-only live
+capability. Online-player and loaded-entity capabilities fail closed after the
+alpha.4 crash demonstrated that the private actor `EntityContext` boundary was
+unsafe. Hosted CI and tagged releases emit a visibly marked `experimental-live`
+ELF, its ABI-matched tester wheel, and a combined install-layout bundle. The
+verified complete-control gate remains closed.
 
 The official Windows and Linux executable SHA-256/size identities are recorded
 and enforced by both manifest verification and the compiled runtime gate. The
-experimental adapter additionally binds the exact Linux world/actor
-dynamic-property core and mutation-hook paths. Its disposable Linux world and
+experimental adapter binds the exact Linux world dynamic-property core and
+mutation-hook paths. Its disposable Linux world and
 hook stage now passes; this is experimental target-scoped evidence and does not
 open the all-target complete-control gate.
 

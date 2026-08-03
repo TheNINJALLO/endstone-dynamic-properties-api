@@ -87,7 +87,7 @@ def test_each_endstone_enum_type_is_unique_and_nonempty() -> None:
 
 def test_wheel_is_exact_cpython_endstone_and_has_no_identity_arguments() -> None:
     metadata = PYPROJECT.read_text(encoding="utf-8")
-    assert 'version = "0.1.0a4"' in metadata
+    assert 'version = "0.1.0a5"' in metadata
     assert 'requires-python = "==3.14.*"' in metadata
     assert '"endstone==0.11.6"' in metadata
     source = PLUGIN.read_text(encoding="utf-8")

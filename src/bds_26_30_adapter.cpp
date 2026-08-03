@@ -259,8 +259,7 @@ std::shared_ptr<IDynamicPropertyAdapter> makeBds2633DynamicPropertyAdapter(
 
 bool hasExperimentalLiveControl(
     const DynamicPropertyCapabilities &capabilities) noexcept {
-    return capabilities.world && capabilities.online_players &&
-           capabilities.loaded_entities && capabilities.read && capabilities.write &&
+    return capabilities.world && capabilities.read && capabilities.write &&
            capabilities.remove && capabilities.clear && capabilities.list_ids &&
            capabilities.list_collections && capabilities.byte_count &&
            capabilities.bulk_set && capabilities.collection_rename &&

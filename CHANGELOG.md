@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.1.0-alpha.5 - 2026-08-02
+
+### Fixed
+
+- Removed the unsafe online-player/loaded-entity native actor boundary that
+  could pass an invalid `EntityContext` registry to BDS and crash the server.
+- Made actor-backed targets return `unsupported` inside the native adapter
+  before any actor lookup or dynamic-property component access.
+
+### Changed
+
+- The experimental Linux capability map and adapter name now truthfully expose
+  a world-only live subset while actor resolution is reworked and behavior-tested.
+- Bumped the plugin, public package, and bound CPython 3.14 tester to alpha.5.
+
 ## 0.1.0-alpha.4 - 2026-08-02
 
 ### Fixed
@@ -117,7 +132,8 @@
 - Kept missing, malformed, and forged verified native manifests fail-closed even during blocked-manifest inspection.
 - Normalized exact runtime metadata on the canonical BDS runtime `26.33` and required an exact draft-release asset set.
 
-[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.4...HEAD
+[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.5...HEAD
+[0.1.0-alpha.5]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.4
 [0.1.0-alpha.3]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.2

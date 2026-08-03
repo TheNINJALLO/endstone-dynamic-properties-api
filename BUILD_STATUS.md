@@ -1,6 +1,6 @@
 # Build status
 
-Version: **0.1.0-alpha.4**
+Version: **0.1.0-alpha.5**
 
 ## Portable unified system
 
@@ -40,8 +40,10 @@ Version: **0.1.0-alpha.4**
 - Windows and Linux archive identities: pinned.
 - Exact Windows and Linux executable SHA-256/size identities: recorded and
   enforced; identity evidence alone does not activate the native gate.
-- Exact Linux world/actor core RVAs and libc++ value/container ABI: recovered
-  from the official executable and bound behind its full SHA-256/size check.
+- Exact Linux world core RVAs and libc++ value/container ABI: recovered from
+  the official executable and bound behind its full SHA-256/size check.
+- Online-player and loaded-entity native access: fail-closed after alpha.4 live
+  crash evidence identified an invalid actor `EntityContext` registry boundary.
 - Offline-player storage contract: not yet behavior-verified.
 - Stored-entity storage contract: not yet behavior-verified.
 - Block dynamic-property contract: not yet behavior-verified.
@@ -51,8 +53,8 @@ Version: **0.1.0-alpha.4**
 - Reviewed native bridge source: absent.
 - Exact Linux experimental world/hook/persistence stage: passed in a disposable
   two-boot BDS run; complete all-target stage probe: not passed.
-- Experimental live service registration: enabled for world, online-player,
-  and loaded-entity targets on exact identity match.
+- Experimental live service registration: enabled for world targets only on
+  exact identity match; actor-backed capabilities are explicitly false.
 - Live CRUD/list/revision/bulk/transfer/migration/import/rollback: implemented
   for those three targets.
 - Offline/stored, item, and block capabilities: disabled and return

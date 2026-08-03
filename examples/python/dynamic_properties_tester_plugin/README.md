@@ -1,7 +1,7 @@
 # Endstone Dynamic Properties API Tester
 
 This is the operator-only, CPython 3.14 acceptance wheel for Dynamic
-Properties API `0.1.0a4` on Endstone `0.11.6`. The wheel loads only its
+Properties API `0.1.0a5` on Endstone `0.11.6`. The wheel loads only its
 package-local `_endstone_dynamic_properties_live` extension. It has no
 in-memory or pure-Python fallback. Mutation commands require either the
 complete native service or the exact-hash experimental live service, and each
@@ -60,10 +60,11 @@ It does not bypass normal plugin collection isolation. `watch` starts a bounded
 native observer for before/after external-mutation events; `drain` atomically
 removes the queued events into a report and records if the 1,024-event queue
 overflowed. Watching proves interception only when the service reports an
-active external-mutation hook capability. The exact-hash experimental live
-adapter enables that capability for its supported world, online-player, and
-loaded-entity targets. `watch probe` performs an operator-only, self-cleaning
-world probe through the raw hooked Bedrock entry points and verifies
+active external-mutation hook capability. The alpha.5 exact-hash experimental
+adapter enables that capability for world targets only; online-player and
+loaded-entity targets are fail-closed while their actor boundary is reworked.
+`watch probe` performs an operator-only, self-cleaning world probe through the
+raw hooked Bedrock entry points and verifies
 set/remove/clear before-and-after interception plus cancellation.
 
 `persistence prepare` records a reload-stable, random server-process

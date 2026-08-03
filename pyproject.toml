@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "endstone-dynamic-properties-api"
-version = "0.1.0a4"
+version = "0.1.0a5"
 description = "Unified world, actor, item, storage and block dynamic-properties API for Endstone"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"

@@ -5,9 +5,7 @@
 #include "endstone_dynamic_properties/in_memory_adapter.h"
 #include "endstone_dynamic_properties/service.h"
 
-#include <endstone/actor/actor.h>
 #include <endstone/level/level.h>
-#include <endstone/player.h>
 #include <endstone/server.h>
 
 #include <link.h>
@@ -15,7 +13,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -44,13 +41,8 @@ constexpr std::uintptr_t SetPropertyRva = 0x0C094EF0;
 constexpr std::uintptr_t RemovePropertyRva = 0x0C0950A0;
 constexpr std::uintptr_t ClearCollectionRva = 0x0C0952C0;
 constexpr std::uintptr_t ManagerGetOrAddLevelPropertiesRva = 0x0C096C10;
-constexpr std::uintptr_t ActorGetOrAddPropertiesRva = 0x09C71920;
 constexpr std::size_t EndstoneLevelHandleWord = 2;
 constexpr std::size_t ServerLevelDynamicPropertiesManagerOffset = 0x7A0;
-constexpr std::size_t ActorEntityContextOffset = 0x8;
-// ILevel's Itanium ABI vtable contains two destructor entries followed by the
-// methods in level_interface.h declaration order. fetchEntity is method 60.
-constexpr std::size_t ILevelFetchEntityVtableSlot = 61;
 
 struct NativeVec3 {
     float x{};
@@ -85,17 +77,15 @@ using RemovePropertyFunction = bool (*)(
 using ClearCollectionFunction = void (*)(
     NativeDynamicProperties *, const std::string &);
 using ManagerGetOrAddFunction = NativeDynamicProperties *(*)(void *);
-using ActorGetOrAddFunction = NativeDynamicProperties *(*)(void *);
 
 struct NativeFunctions {
     SetPropertyFunction set{};
     RemovePropertyFunction remove{};
     ClearCollectionFunction clear{};
     ManagerGetOrAddFunction get_or_add_level{};
-    ActorGetOrAddFunction get_or_add_actor{};
 
     [[nodiscard]] bool complete() const noexcept {
-        return set && remove && clear && get_or_add_level && get_or_add_actor;
+        return set && remove && clear && get_or_add_level;
     }
 };
 
@@ -130,20 +120,11 @@ NativeFunctions resolveFunctions() noexcept {
         atRva<RemovePropertyFunction>(base, RemovePropertyRva),
         atRva<ClearCollectionFunction>(base, ClearCollectionRva),
         atRva<ManagerGetOrAddFunction>(base, ManagerGetOrAddLevelPropertiesRva),
-        atRva<ActorGetOrAddFunction>(base, ActorGetOrAddPropertiesRva),
     };
 }
 
 OperationResult failure(DynamicPropertyStatus status, std::string message) {
     return {status, std::move(message), {}, {}, 0};
-}
-
-std::optional<std::int64_t> parseActorId(std::string_view value) noexcept {
-    std::int64_t result{};
-    const auto [end, error] =
-        std::from_chars(value.data(), value.data() + value.size(), result);
-    if (error != std::errc{} || end != value.data() + value.size()) return std::nullopt;
-    return result;
 }
 
 DynamicPropertyValue fromNative(const NativePropertyValue &value) {
@@ -242,16 +223,20 @@ public:
 
     [[nodiscard]] std::string_view name() const noexcept override {
         return hooks_installed_
-            ? "bds-1.26.33.1-experimental-live-world-player-entity-hooks"
-            : "bds-1.26.33.1-experimental-live-world-player-entity";
+            ? "bds-1.26.33.1-experimental-live-world-hooks"
+            : "bds-1.26.33.1-experimental-live-world";
     }
 
     [[nodiscard]] DynamicPropertyCapabilities capabilities() const noexcept override {
         DynamicPropertyCapabilities out;
         if (!ready()) return out;
         out.world = true;
-        out.online_players = true;
-        out.loaded_entities = true;
+        // The alpha.4 actor boundary returned an invalid EntityContext and
+        // crashed inside BDS while resolving its entt registry. Keep both
+        // actor-backed target families fail-closed until a live actor probe
+        // behavior-verifies the replacement boundary.
+        out.online_players = false;
+        out.loaded_entities = false;
         out.read = true;
         out.write = true;
         out.remove = true;
@@ -323,20 +308,6 @@ public:
         auto world = DynamicPropertyTarget::world(
             server_.getLevel() ? server_.getLevel()->getName() : "default");
         static_cast<void>(resolveTarget(world));
-        if (auto *level = server_.getLevel()) {
-            for (auto *actor : level->getActors()) {
-                if (actor) {
-                    static_cast<void>(resolveTarget(DynamicPropertyTarget::loadedEntity(
-                        std::to_string(actor->getId()), world.world_id)));
-                }
-            }
-        }
-        for (auto *player : server_.getOnlinePlayers()) {
-            if (player) {
-                static_cast<void>(resolveTarget(DynamicPropertyTarget::onlinePlayer(
-                    player->getXuid(), world.world_id)));
-            }
-        }
     }
 
     [[nodiscard]] ExperimentalExternalHookProbeResult probeExternalHooks(
@@ -609,21 +580,6 @@ private:
         return handle;
     }
 
-    [[nodiscard]] void *minecraftActor(std::int64_t unique_id) const noexcept {
-        auto *level = minecraftLevel();
-        if (!level) return nullptr;
-        const auto vtable = *reinterpret_cast<void ***>(level);
-        if (!vtable || !vtable[ILevelFetchEntityVtableSlot]) return nullptr;
-        struct NativeActorUniqueId {
-            std::int64_t raw_id;
-        };
-        using FetchEntityFunction = void *(*)(
-            const void *, NativeActorUniqueId, bool);
-        const auto fetch = reinterpret_cast<FetchEntityFunction>(
-            vtable[ILevelFetchEntityVtableSlot]);
-        return fetch(level, NativeActorUniqueId{unique_id}, false);
-    }
-
     [[nodiscard]] ResolvedTarget resolveTarget(
         const DynamicPropertyTarget &target) const {
         if (!ready()) {
@@ -655,56 +611,10 @@ private:
                                  "BDS did not return world dynamic properties"};
         }
 
-        std::optional<std::int64_t> actor_id;
-        if (target.kind == TargetKind::OnlinePlayer) {
-            for (auto *player : server_.getOnlinePlayers()) {
-                if (player && player->getXuid() == target.xuid) {
-                    actor_id = player->getId();
-                    break;
-                }
-            }
-            if (!actor_id) {
-                return {nullptr, DynamicPropertyStatus::TargetUnavailable,
-                        "online player XUID is not loaded"};
-            }
-        } else if (target.kind == TargetKind::LoadedEntity) {
-            actor_id = parseActorId(target.entity_id);
-            if (!actor_id) {
-                return {nullptr, DynamicPropertyStatus::InvalidTarget,
-                        "loaded entity identifier must be a signed ActorUniqueID"};
-            }
-            bool exposed_by_endstone = false;
-            if (auto *level = server_.getLevel()) {
-                for (auto *actor : level->getActors()) {
-                    if (actor && actor->getId() == *actor_id) {
-                        exposed_by_endstone = true;
-                        break;
-                    }
-                }
-            }
-            if (!exposed_by_endstone) {
-                return {nullptr, DynamicPropertyStatus::TargetUnavailable,
-                        "loaded entity is not present in Endstone's actor registry"};
-            }
-        } else {
-            return {nullptr, DynamicPropertyStatus::Unsupported,
-                    "experimental adapter does not implement target kind " +
-                        std::string(targetKindName(target.kind))};
-        }
-
-        auto *actor = minecraftActor(*actor_id);
-        if (!actor) {
-            return {nullptr, DynamicPropertyStatus::TargetUnavailable,
-                    "BDS actor is no longer loaded"};
-        }
-        auto *entity_context =
-            static_cast<std::byte *>(actor) + ActorEntityContextOffset;
-        auto *properties = functions_.get_or_add_actor(entity_context);
-        rememberTarget(properties, target);
-        return properties
-            ? ResolvedTarget{properties, DynamicPropertyStatus::Captured, {}}
-            : ResolvedTarget{nullptr, DynamicPropertyStatus::TargetUnavailable,
-                             "BDS actor dynamic-properties component is unavailable"};
+        return {nullptr, DynamicPropertyStatus::Unsupported,
+                "experimental adapter implements only world targets; "
+                "online-player and loaded-entity access is disabled after "
+                "the alpha.4 actor-boundary crash"};
     }
 
     [[nodiscard]] CaptureResult captureUnlocked(const CollectionRef &ref) const {

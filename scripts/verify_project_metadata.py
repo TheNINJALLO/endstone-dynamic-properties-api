@@ -297,7 +297,7 @@ def main() -> int:
     if source.get("native_plugin_operational") is not True:
         failures.append("experimental live native plugin must declare operational=true")
     if source.get("native_artifact_mode") != "experimental-live":
-        failures.append("alpha.4 native artifact mode must be experimental-live")
+        failures.append("experimental prerelease artifact mode must be experimental-live")
     if source.get("linux_glibc_ceiling") != "2.35":
         failures.append("Linux native releases must enforce a GLIBC_2.35 ceiling")
     if source.get("tester_wheel_included") is not True:

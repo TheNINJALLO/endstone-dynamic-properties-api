@@ -93,7 +93,7 @@ class FakeServer:
 
 
 class FakeBridge:
-    __version__ = "0.1.0a4"
+    __version__ = "0.1.0a5"
 
     def __init__(self) -> None:
         self.stores: dict[str, dict[str, Any]] = {}

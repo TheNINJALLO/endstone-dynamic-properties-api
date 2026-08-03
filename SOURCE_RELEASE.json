@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "name": "endstone-dynamic-properties-api",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "release_kind": "experimental-live-native-prerelease",
   "native_plugin_included": true,
   "native_plugin_operational": true,
@@ -13,6 +13,6 @@
   "supported_bds_packages": ["1.26.33.1"],
   "supported_bds_runtime": ["26.33"],
   "endstone_tags": ["v0.11.6"],
-  "native_policy": "exact-hash experimental live registration with truthful per-target capabilities",
+  "native_policy": "exact-hash experimental world-only live registration; actor targets fail closed after alpha.4 crash evidence",
   "platforms": ["linux-x64", "windows-x64"]
 }

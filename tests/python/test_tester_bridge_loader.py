@@ -38,7 +38,7 @@ def load_loader():
 LOADER = load_loader()
 
 
-def complete_bridge(version: str = "0.1.0a4") -> ModuleType:
+def complete_bridge(version: str = "0.1.0a5") -> ModuleType:
     bridge = ModuleType("fake_live_bridge")
     bridge.__version__ = version
     for name in LOADER.REQUIRED_FUNCTIONS:
@@ -51,7 +51,7 @@ def test_loader_imports_only_the_package_local_extension() -> None:
     with patch.object(
         LOADER.importlib, "import_module", return_value=bridge
     ) as importer:
-        assert LOADER.import_live_bridge("0.1.0a4") is bridge
+        assert LOADER.import_live_bridge("0.1.0a5") is bridge
     importer.assert_called_once_with(LOADER.BUNDLED_BRIDGE_MODULE)
     assert (
         LOADER.BUNDLED_BRIDGE_MODULE.endswith(
@@ -70,7 +70,7 @@ def test_loader_rejects_missing_bridge_without_trying_a_global_fallback() -> Non
         with pytest.raises(
             ModuleNotFoundError, match="package-local live bridge is missing"
         ):
-            LOADER.import_live_bridge("0.1.0a4")
+            LOADER.import_live_bridge("0.1.0a5")
     assert importer.call_count == 1
 
 
@@ -79,9 +79,9 @@ def test_loader_rejects_version_mismatch_and_incomplete_exports() -> None:
         LOADER.importlib, "import_module", return_value=complete_bridge("old")
     ):
         with pytest.raises(RuntimeError, match="does not match tester version"):
-            LOADER.import_live_bridge("0.1.0a4")
+            LOADER.import_live_bridge("0.1.0a5")
     incomplete = complete_bridge()
     del incomplete.flush
     with patch.object(LOADER.importlib, "import_module", return_value=incomplete):
         with pytest.raises(RuntimeError, match="missing callable exports: flush"):
-            LOADER.import_live_bridge("0.1.0a4")
+            LOADER.import_live_bridge("0.1.0a5")

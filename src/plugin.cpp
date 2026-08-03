@@ -58,7 +58,7 @@ public:
             endstone::ServicePriority::Normal);
         const auto mode = capabilities.completeControl()
             ? "complete-control"
-            : "experimental live world/player/entity";
+            : "experimental live world-only";
         getLogger().info(
             std::string("Dynamic Properties API ") + ENDSTONE_DYNAMIC_PROPERTIES_VERSION +
             " registered " + mode + " service " +
