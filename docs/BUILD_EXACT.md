@@ -142,24 +142,36 @@ wheel builder at the staged, package-local extension:
 ```bash
 cmake --install build-exact --prefix stage/exact
 
+bridge="stage/exact/python/_endstone_dynamic_properties_live$(python3.14-config --extension-suffix)"
+runtime_args=()
+for soname in libc++.so.1 libc++abi.so.1 libunwind.so.1; do
+  runtime_path="$(ldd "$bridge" | awk -v soname="$soname" \
+    '$1 == soname { print $3; exit }')"
+  test -s "$runtime_path"
+  runtime_args+=(--runtime-library "$runtime_path")
+done
 python3.14 scripts/build_test_wheel.py \
-  --bridge "stage/exact/python/_endstone_dynamic_properties_live$(python3.14-config --extension-suffix)" \
-  --stage-dir stage/exact
+  --bridge "$bridge" \
+  --stage-dir stage/exact \
+  "${runtime_args[@]}"
 ```
 
 On Windows, pass the staged
 `python/_endstone_dynamic_properties_live.cp314-win_amd64.pyd` path instead.
 The builder rejects a bridge from another stage, Python ABI, host binary
 format, or x86-64 machine architecture, then copies the completed tester wheel
-into `stage/exact/plugins/`.
+into `stage/exact/plugins/`. Linux wheels must receive exactly the LLVM 18
+`libc++.so.1`, `libc++abi.so.1`, and `libunwind.so.1` closure; the builder
+packages them beside the bridge with their license.
 
 ## Hosted Linux compilation
 
 `.github/workflows/linux-native.yml` repeats the Conan, CMake, CTest, install,
 ELF inspection, and tester-wheel build on Ubuntu 22.04 x86-64 with CPython
-3.14. It rejects a plugin or tester bridge whose highest imported glibc symbol
-exceeds `GLIBC_2.35`, then classifies the native proof before configuring
-CMake:
+3.14. It rejects a plugin, tester bridge, or bundled LLVM runtime whose highest
+imported glibc symbol exceeds `GLIBC_2.35`. It also extracts the wheel and
+proves the dynamic loader resolves the C++ runtime from its package-local
+directory before classifying the native proof:
 
 - an exact-hash experimental bridge builds `linux-native-experimental-live`
   with truthful per-target capabilities for stage testing;

@@ -230,7 +230,10 @@ if(ENDSTONE_DYNAMIC_PROPERTIES_BUILD_PLUGIN)
             src/live_python_bindings.cpp)
         set_target_properties(_endstone_dynamic_properties_live PROPERTIES
             BUILD_RPATH_USE_ORIGIN ON
-            INSTALL_RPATH ""
+            # The tester wheel vendors the exact LLVM 18 runtime beside this
+            # module.  Keep the search package-local so hosts do not need to
+            # install libc++, libc++abi, or libunwind system-wide.
+            INSTALL_RPATH "\$ORIGIN/_native_libs"
             INSTALL_RPATH_USE_LINK_PATH FALSE
             CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN ON

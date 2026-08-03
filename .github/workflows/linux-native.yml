@@ -143,10 +143,33 @@ jobs:
           stage="$PWD/stage/linux-x64"
           cmake --install build-linux-native --prefix "$stage"
           bridge="$stage/python/_endstone_dynamic_properties_live$(python3-config --extension-suffix)"
+          runtime_args=()
+          for soname in libc++.so.1 libc++abi.so.1 libunwind.so.1; do
+            runtime_path="$(ldd "$bridge" | awk -v soname="$soname" \
+              '$1 == soname { print $3; exit }')"
+            test -n "$runtime_path"
+            test -s "$runtime_path"
+            runtime_args+=(--runtime-library "$runtime_path")
+          done
           python scripts/build_test_wheel.py \
             --bridge "$bridge" \
             --stage-dir "$stage" \
-            --output-dir "$PWD/dist/linux-x64"
+            --output-dir "$PWD/dist/linux-x64" \
+            "${runtime_args[@]}"
+          wheel="$(find "$stage/plugins" -maxdepth 1 -name '*.whl' -type f -print -quit)"
+          wheel_root="$RUNNER_TEMP/dynamic-properties-wheel-check"
+          python -m zipfile -e "$wheel" "$wheel_root"
+          wheel_bridge="$(find "$wheel_root/endstone_dynamic_properties_tester" \
+            -maxdepth 1 -name '_endstone_dynamic_properties_live*.so' -type f -print -quit)"
+          readelf -d "$wheel_bridge" \
+            | grep -F 'Library runpath: [$ORIGIN/_native_libs]'
+          for soname in libc++.so.1 libc++abi.so.1 libunwind.so.1; do
+            bundled="$wheel_root/endstone_dynamic_properties_tester/_native_libs/$soname"
+            test -s "$bundled"
+            resolved="$(ldd "$wheel_bridge" | awk -v soname="$soname" \
+              '$1 == soname { print $3; exit }')"
+            test "$(readlink -f "$resolved")" = "$(readlink -f "$bundled")"
+          done
       - name: Install exact Endstone runtime for disposable acceptance
         if: github.event_name != 'pull_request'
         run: python -m pip install 'endstone==0.11.6'
@@ -177,7 +200,14 @@ jobs:
             echo "Installed plugin contains a forbidden RPATH/RUNPATH" >&2
             exit 1
           fi
-          for binary in "$plugin" "$bridge"; do
+          wheel="$(find "$stage/plugins" -maxdepth 1 -name '*.whl' -type f -print -quit)"
+          wheel_root="$RUNNER_TEMP/dynamic-properties-wheel-inspect"
+          python -m zipfile -e "$wheel" "$wheel_root"
+          mapfile -t runtime_libraries < <(find \
+            "$wheel_root/endstone_dynamic_properties_tester/_native_libs" \
+            -maxdepth 1 -name '*.so.1' -type f -print | sort)
+          test "${#runtime_libraries[@]}" -eq 3
+          for binary in "$plugin" "$bridge" "${runtime_libraries[@]}"; do
             maximum_glibc="$(readelf --version-info "$binary" \
               | grep -oE 'GLIBC_[0-9]+(\.[0-9]+)+' \
               | sed 's/^GLIBC_//' | sort -Vu | tail -n 1)"

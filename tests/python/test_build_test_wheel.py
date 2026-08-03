@@ -4,7 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from scripts.build_test_wheel import validate_bridge_binary
+from scripts.build_test_wheel import (
+    REQUIRED_LINUX_RUNTIME_LIBRARIES,
+    validate_bridge_binary,
+    validate_runtime_libraries,
+)
 
 
 def _write_pe(path: Path, machine: int) -> None:
@@ -60,3 +64,31 @@ def test_rejects_unsupported_native_wheel_platform(tmp_path: Path) -> None:
 
     with pytest.raises(SystemExit, match="support only"):
         validate_bridge_binary(bridge, "macosx_15_0_arm64")
+
+
+def test_accepts_complete_linux_runtime_closure(tmp_path: Path) -> None:
+    libraries = []
+    for name in REQUIRED_LINUX_RUNTIME_LIBRARIES:
+        library = tmp_path / name
+        _write_elf(library, 62)
+        libraries.append(library)
+
+    result = validate_runtime_libraries(libraries, "linux_x86_64")
+
+    assert set(result) == set(REQUIRED_LINUX_RUNTIME_LIBRARIES)
+
+
+def test_rejects_incomplete_linux_runtime_closure(tmp_path: Path) -> None:
+    library = tmp_path / "libc++.so.1"
+    _write_elf(library, 62)
+
+    with pytest.raises(SystemExit, match=r"missing=.*libc\+\+abi"):
+        validate_runtime_libraries([library], "linux_x86_64")
+
+
+def test_rejects_linux_runtime_for_windows_wheel(tmp_path: Path) -> None:
+    library = tmp_path / "libc++.so.1"
+    _write_elf(library, 62)
+
+    with pytest.raises(SystemExit, match="supported only for linux_x86_64"):
+        validate_runtime_libraries([library], "win_amd64")

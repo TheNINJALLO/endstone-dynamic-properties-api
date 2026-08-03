@@ -3,7 +3,7 @@
 ## Supported releases
 
 Only the latest tagged prerelease is eligible for security fixes. Version
-`0.1.0-alpha.3` is an experimental live Linux plugin restricted to the exact
+`0.1.0-alpha.4` is an experimental live Linux plugin restricted to the exact
 BDS `1.26.33.1` executable and Endstone `0.11.6`. It must not be represented as
 a verified complete-control release.
 

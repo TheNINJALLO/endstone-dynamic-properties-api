@@ -27,6 +27,9 @@ def test_linux_workflow_builds_the_plugin_and_matching_native_tester() -> None:
     assert "endstone_dynamic_properties_probe_external_hooks_v1" in source
     assert "dpkg --compare-versions" in source
     assert "GLIBC_2.35 ceiling" in source
+    assert "--runtime-library" in source
+    assert "libc++.so.1 libc++abi.so.1 libunwind.so.1" in source
+    assert "Library runpath: [$ORIGIN/_native_libs]" in source
 
 
 def test_linux_push_and_release_run_disposable_two_boot_acceptance() -> None:

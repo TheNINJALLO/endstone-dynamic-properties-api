@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "endstone-dynamic-properties-tester"
-version = "0.1.0a3"
+version = "0.1.0a4"
 description = "In-game acceptance and persistence tests for Endstone Dynamic Properties API"
 readme = "README.md"
 requires-python = "==3.14.*"
@@ -23,5 +23,7 @@ package-dir = {"" = "src"}
 endstone_dynamic_properties_tester = [
     "_endstone_dynamic_properties_live*.pyd",
     "_endstone_dynamic_properties_live*.so",
+    "_native_libs/*.so.1",
+    "LLVM-LICENSE.txt",
 ]
 endstone_dynamic_properties = ["py.typed"]

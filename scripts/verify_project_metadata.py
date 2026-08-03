@@ -203,7 +203,15 @@ def main() -> int:
         failures.append("tester wheel builder must require CPython 3.14")
     if not all(
         marker in wheel_builder
-        for marker in ("validate_bridge_binary", "machine != 0x8664", "machine != 62")
+        for marker in (
+            "validate_bridge_binary",
+            "validate_runtime_libraries",
+            "libc++.so.1",
+            "libc++abi.so.1",
+            "libunwind.so.1",
+            "machine != 0x8664",
+            "machine != 62",
+        )
     ):
         failures.append(
             "tester wheel builder must validate the bridge machine architecture"
@@ -252,6 +260,7 @@ def main() -> int:
         "package_native_release.py",
         "GATE CLOSED:",
         "EXPERIMENTAL LIVE:",
+        "Library runpath: [$ORIGIN/_native_libs]",
     )
     if not all(marker in linux_workflow for marker in required_linux_workflow_markers):
         failures.append("Linux native workflow is missing an exact build/gate marker")
@@ -288,7 +297,7 @@ def main() -> int:
     if source.get("native_plugin_operational") is not True:
         failures.append("experimental live native plugin must declare operational=true")
     if source.get("native_artifact_mode") != "experimental-live":
-        failures.append("alpha.3 native artifact mode must be experimental-live")
+        failures.append("alpha.4 native artifact mode must be experimental-live")
     if source.get("linux_glibc_ceiling") != "2.35":
         failures.append("Linux native releases must enforce a GLIBC_2.35 ceiling")
     if source.get("tester_wheel_included") is not True:

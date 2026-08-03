@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.1.0-alpha.4 - 2026-08-02
+
+### Fixed
+
+- Made the Linux CPython 3.14 tester wheel self-contained by bundling its
+  pinned LLVM 18 `libc++`, `libc++abi`, and `libunwind` runtime closure.
+- Added an origin-relative loader path and CI checks proving the wheel resolves
+  all three C++ runtime libraries from its own package instead of the host.
+
 ## 0.1.0-alpha.3 - 2026-08-02
 
 ### Added
@@ -108,7 +117,8 @@
 - Kept missing, malformed, and forged verified native manifests fail-closed even during blocked-manifest inspection.
 - Normalized exact runtime metadata on the canonical BDS runtime `26.33` and required an exact draft-release asset set.
 
-[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.3...HEAD
+[Unreleased]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/compare/v0.1.0-alpha.4...HEAD
+[0.1.0-alpha.4]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.4
 [0.1.0-alpha.3]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/TheNINJALLO/endstone-dynamic-properties-api/releases/tag/v0.1.0-alpha.1

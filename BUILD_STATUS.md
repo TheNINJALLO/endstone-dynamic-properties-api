@@ -1,6 +1,6 @@
 # Build status
 
-Version: **0.1.0-alpha.3**
+Version: **0.1.0-alpha.4**
 
 ## Portable unified system
 
@@ -16,7 +16,7 @@ Version: **0.1.0-alpha.3**
 - GCC, Clang, and sanitizer hosted jobs: configured and required to pass on `main` before tagging.
 - MSVC 19.44 Debug and Release builds with warnings as errors: validated.
 - C++ and Python tests: passing locally (MSVC Release CTest `2/2` and Python
-  `139/139`) and across the hosted compiler/runtime matrix.
+  `144/144`) and across the hosted compiler/runtime matrix.
 - Installed CMake package consumer (`EndstoneDynamicProperties::core`): passing.
 - Python wheel and source-distribution build metadata: configured.
 - GitHub CI and draft release workflows: configured.
@@ -27,8 +27,10 @@ Version: **0.1.0-alpha.3**
   implemented.
 - Hosted Linux x86-64 `.so` plus CPython 3.14 tester-wheel compilation is
   configured on the Ubuntu 22.04 / GLIBC 2.35 compatibility floor. Packaging
-  rejects newer glibc imports in either native binary. The artifact is visibly
-  marked `experimental-live`.
+  rejects newer glibc imports in either native binary or the bundled LLVM 18
+  runtime. The tester wheel is self-contained and its loader resolution is
+  checked before live acceptance. The artifact is visibly marked
+  `experimental-live`.
 
 ## Exact native bridge
 

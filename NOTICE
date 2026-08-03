@@ -2,3 +2,7 @@ Endstone Dynamic Properties API
 Copyright 2026 Ninj-OS contributors
 
 This product is licensed under the Apache License, Version 2.0.
+
+Linux tester wheels bundle LLVM 18 libc++, libc++abi, and libunwind under the
+Apache License v2.0 with LLVM Exceptions. The complete upstream license is
+included as endstone_dynamic_properties_tester/LLVM-LICENSE.txt in the wheel.

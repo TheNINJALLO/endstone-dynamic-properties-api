@@ -1,7 +1,7 @@
 # Endstone Dynamic Properties API Tester
 
 This is the operator-only, CPython 3.14 acceptance wheel for Dynamic
-Properties API `0.1.0a3` on Endstone `0.11.6`. The wheel loads only its
+Properties API `0.1.0a4` on Endstone `0.11.6`. The wheel loads only its
 package-local `_endstone_dynamic_properties_live` extension. It has no
 in-memory or pure-Python fallback. Mutation commands require either the
 complete native service or the exact-hash experimental live service, and each
@@ -11,6 +11,12 @@ targets are reported before the tester performs any mutation.
 The release build vendors the matching typed public Python API in the same
 wheel so server plugins and the test harness cannot accidentally resolve a
 differently versioned API installation.
+
+The Linux wheel also carries the exact LLVM 18 `libc++.so.1`,
+`libc++abi.so.1`, and `libunwind.so.1` runtime libraries used to build its
+bridge. They are resolved only from the wheel's package-local `_native_libs`
+directory, so no host package installation or `LD_LIBRARY_PATH` change is
+required.
 
 Install the native plugin and its matching tester wheel in the server's
 `plugins/` directory. Tagged releases provide a compatibility-qualified ZIP

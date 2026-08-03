@@ -1,6 +1,6 @@
 # Endstone Dynamic Properties API
 
-**Release:** `v0.1.0-alpha.3`<br>
+**Release:** `v0.1.0-alpha.4`<br>
 **Service ABI:** `endstone:dynamic-properties:v1`<br>
 **Target:** Minecraft Bedrock Dedicated Server package `1.26.33.1`, runtime `26.33`, Endstone `v0.11.6`
 
@@ -37,7 +37,7 @@ The **portable C++ API, Python reference package, in-memory complete-control ada
 Mutation requests are defensively copied, callbacks run outside commit locks, and final limit validation is serialized across services sharing an adapter. Event-listener failures cannot suppress later listeners or erase the audit of an already committed write. Audit-sink failures are reported without replacing the committed result.
 
 The verified complete-control bridge remains intentionally fail-closed. The
-alpha.3 experimental Linux adapter is a separate, visibly named test mode: it
+alpha.4 experimental Linux adapter is a separate, visibly named test mode: it
 registers only after the exact executable and runtime identity match, and it
 reports only the target families it actually implements. A future verified
 release must still prove every target family in one activation:
@@ -57,7 +57,9 @@ never backed by synthetic or sidecar storage.
 The source tree also includes an operator-only CPython 3.14 tester wheel. Its
 package-local native bridge exposes no in-memory fallback, its configured
 target file represents all 12 target families, and its mutating commands
-require explicit confirmation. The tester can inventory existing
+require explicit confirmation. The Linux wheel includes its pinned LLVM 18
+C++ runtime, so the server host does not need a system `libc++.so.1` package.
+The tester can inventory existing
 tester-visible collections and capture bounded before/after external-mutation
 events for the verified native hooks. See
 [`examples/python/dynamic_properties_tester_plugin/README.md`](examples/python/dynamic_properties_tester_plugin/README.md)

@@ -21,6 +21,13 @@ API_PACKAGE = Path("python/endstone_dynamic_properties")
 PACKAGE_NAME = "endstone_dynamic_properties_tester"
 BRIDGE_MODULE = "_endstone_dynamic_properties_live"
 REQUIRED_PYTHON = (3, 14)
+RUNTIME_DIRECTORY = "_native_libs"
+REQUIRED_LINUX_RUNTIME_LIBRARIES = (
+    "libc++.so.1",
+    "libc++abi.so.1",
+    "libunwind.so.1",
+)
+LLVM_LICENSE = Path("third_party/llvm/LLVM-LICENSE.txt")
 
 
 def platform_tag() -> str:
@@ -80,6 +87,41 @@ def validate_bridge_binary(bridge: Path, target_platform: str) -> None:
     )
 
 
+def validate_runtime_libraries(
+    libraries: list[Path], target_platform: str
+) -> dict[str, Path]:
+    """Validate the complete package-local Linux C++ runtime closure."""
+
+    if target_platform != "linux_x86_64":
+        if libraries:
+            raise SystemExit(
+                "Package-local LLVM runtime libraries are supported only for "
+                "linux_x86_64 tester wheels"
+            )
+        return {}
+
+    by_name: dict[str, Path] = {}
+    for candidate in libraries:
+        if candidate.name in by_name:
+            raise SystemExit(f"Duplicate runtime library {candidate.name!r}")
+        if not candidate.is_file() or candidate.stat().st_size == 0:
+            raise SystemExit(f"Runtime library is missing or empty: {candidate}")
+        by_name[candidate.name] = candidate
+
+    required = set(REQUIRED_LINUX_RUNTIME_LIBRARIES)
+    supplied = set(by_name)
+    if supplied != required:
+        missing = sorted(required - supplied)
+        unexpected = sorted(supplied - required)
+        raise SystemExit(
+            "Linux tester wheel requires the exact LLVM runtime closure; "
+            f"missing={missing}, unexpected={unexpected}"
+        )
+    for name, library in by_name.items():
+        validate_bridge_binary(library, target_platform)
+    return by_name
+
+
 def project_version(project: Path) -> str:
     import tomllib
 
@@ -103,6 +145,16 @@ def main() -> int:
     parser.add_argument("--bridge", type=Path, required=True)
     parser.add_argument("--stage-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "dist" / "release")
+    parser.add_argument(
+        "--runtime-library",
+        action="append",
+        default=[],
+        type=Path,
+        help=(
+            "Package-local Linux runtime library; repeat for libc++.so.1, "
+            "libc++abi.so.1, and libunwind.so.1"
+        ),
+    )
     args = parser.parse_args()
 
     required_python_text = ".".join(str(part) for part in REQUIRED_PYTHON)
@@ -139,6 +191,12 @@ def main() -> int:
         )
     target_platform = platform_tag()
     validate_bridge_binary(bridge, target_platform)
+    runtime_libraries = validate_runtime_libraries(
+        args.runtime_library, target_platform
+    )
+    llvm_license = ROOT / LLVM_LICENSE
+    if runtime_libraries and not llvm_license.is_file():
+        raise SystemExit(f"LLVM runtime license is missing: {llvm_license}")
 
     wheel_project = ROOT / WHEEL_PROJECT
     if not (wheel_project / "pyproject.toml").is_file():
@@ -175,6 +233,12 @@ def main() -> int:
         staged_package = staged_project / WHEEL_PACKAGE
         staged_package.mkdir(parents=True, exist_ok=True)
         shutil.copy2(bridge, staged_package / bridge.name)
+        if runtime_libraries:
+            runtime_directory = staged_package / RUNTIME_DIRECTORY
+            runtime_directory.mkdir()
+            for name, library in sorted(runtime_libraries.items()):
+                shutil.copy2(library, runtime_directory / name)
+            shutil.copy2(llvm_license, staged_package / "LLVM-LICENSE.txt")
         shutil.copytree(
             staged_root / API_PACKAGE,
             staged_project / "src" / "endstone_dynamic_properties",
@@ -221,6 +285,31 @@ def main() -> int:
                 raise SystemExit(
                     "Tester wheel must contain exactly one package-local bridge "
                     f"{expected_bridge}"
+                )
+            expected_runtime_members = (
+                {
+                    f"{PACKAGE_NAME}/{RUNTIME_DIRECTORY}/{name}"
+                    for name in REQUIRED_LINUX_RUNTIME_LIBRARIES
+                }
+                if target_platform == "linux_x86_64"
+                else set()
+            )
+            runtime_members = {
+                name
+                for name in names
+                if name.startswith(f"{PACKAGE_NAME}/{RUNTIME_DIRECTORY}/")
+                and not name.endswith("/")
+            }
+            if runtime_members != expected_runtime_members:
+                raise SystemExit(
+                    "Tester wheel LLVM runtime closure mismatch; "
+                    f"expected={sorted(expected_runtime_members)}, "
+                    f"got={sorted(runtime_members)}"
+                )
+            expected_license = f"{PACKAGE_NAME}/LLVM-LICENSE.txt"
+            if runtime_libraries and names.count(expected_license) != 1:
+                raise SystemExit(
+                    f"Tester wheel must contain the LLVM runtime license {expected_license}"
                 )
             if "endstone_dynamic_properties/__init__.py" not in names:
                 raise SystemExit(

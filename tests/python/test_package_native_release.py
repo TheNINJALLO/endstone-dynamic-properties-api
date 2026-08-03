@@ -12,11 +12,11 @@ from zipfile import ZipFile
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "package_native_release.py"
 WHEEL_NAME = (
-    "endstone_dynamic_properties_tester-0.1.0a3-"
+    "endstone_dynamic_properties_tester-0.1.0a4-"
     "cp314-cp314-linux_x86_64.whl"
 )
 RELEASE_SUFFIX = (
-    "0.1.0-alpha.3-bds-1.26.33.1-endstone-0.11.6-"
+    "0.1.0-alpha.4-bds-1.26.33.1-endstone-0.11.6-"
     "linux-x86_64-glibc-2.35-experimental-live"
 )
 
@@ -44,8 +44,17 @@ def make_stage(
             "_endstone_dynamic_properties_live.cpython-314-x86_64-linux-gnu.so",
             elf_header + b"bridge\x00GLIBC_" + bridge_glibc.encode("ascii"),
         )
+        for runtime in ("libc++.so.1", "libc++abi.so.1", "libunwind.so.1"):
+            archive.writestr(
+                f"endstone_dynamic_properties_tester/_native_libs/{runtime}",
+                elf_header + runtime.encode("ascii") + b"\x00GLIBC_2.2.5",
+            )
         archive.writestr(
-            "endstone_dynamic_properties_tester-0.1.0a3.dist-info/WHEEL",
+            "endstone_dynamic_properties_tester/LLVM-LICENSE.txt",
+            "Apache License 2.0 with LLVM Exceptions\n",
+        )
+        archive.writestr(
+            "endstone_dynamic_properties_tester-0.1.0a4.dist-info/WHEEL",
             "Wheel-Version: 1.0\n"
             "Generator: test\n"
             "Root-Is-Purelib: false\n"
@@ -115,6 +124,11 @@ def test_packager_creates_named_plugin_wheel_and_deterministic_bundle(
             "ceiling": "2.35",
             "plugin_minimum": "2.2.5",
             "tester_bridge_minimum": "2.2.5",
+            "tester_runtime_minimum": {
+                "libc++.so.1": "2.2.5",
+                "libc++abi.so.1": "2.2.5",
+                "libunwind.so.1": "2.2.5",
+            },
         }
         assert manifest["plugin"] == "plugins/endstone_dynamic_properties_api.so"
         assert manifest["tester_wheel"] == f"plugins/{WHEEL_NAME}"
@@ -150,3 +164,19 @@ def test_packager_rejects_tester_bridge_above_glibc_ceiling(
 
     assert result.returncode != 0
     assert "Tester wheel bridge requires GLIBC_2.38" in result.stderr
+
+
+def test_packager_rejects_missing_tester_runtime(tmp_path: Path) -> None:
+    stage, wheel = make_stage(tmp_path)
+    rewritten = wheel.with_suffix(".rewritten.whl")
+    with ZipFile(wheel) as source, ZipFile(rewritten, "w") as destination:
+        for member in source.infolist():
+            if not member.filename.endswith("libc++.so.1"):
+                destination.writestr(member, source.read(member.filename))
+    wheel.unlink()
+    rewritten.rename(wheel)
+
+    result = run_packager(stage, wheel, tmp_path / "output")
+
+    assert result.returncode != 0
+    assert "must contain exactly one runtime library" in result.stderr

@@ -1,6 +1,6 @@
 # Validation results
 
-Release metadata: `0.1.0-alpha.3`<br>
+Release metadata: `0.1.0-alpha.4`<br>
 Working-tree validation date: `2026-08-02`
 
 ## Passed locally
@@ -11,7 +11,7 @@ Working-tree validation date: `2026-08-02`
 - Rejection of incomplete native activation.
 - Strict public/tool manifest-verifier parity, including omitted proof sections and duplicate symbols.
 - Strict stage-probe rejection of empty result sets and non-hexadecimal evidence hashes.
-- Python tests: `139/139` passed.
+- Python tests: `144/144` passed.
 - MSVC 19.44 C++20 Release compilation with warnings as errors.
 - Release CTest: `2/2` passed.
 - Clean installed-SDK `find_package()` consumer build and execution.
@@ -34,6 +34,9 @@ Working-tree validation date: `2026-08-02`
 - Native release packaging rejects either the plugin or tester bridge when its
   imported glibc symbols exceed `GLIBC_2.35`; the earlier Ubuntu 24.04 artifact
   was confirmed rejected because it imports `GLIBC_2.38`.
+- The tester-wheel packager requires all three LLVM 18 runtime libraries and
+  the release packager validates their x86-64 ELF format, glibc imports, and
+  bundled license. Hosted Linux CI additionally checks `$ORIGIN` resolution.
 
 ## Configured CI coverage
 

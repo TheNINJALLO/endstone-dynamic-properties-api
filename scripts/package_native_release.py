@@ -22,6 +22,11 @@ BRIDGE_MEMBER = (
     "endstone_dynamic_properties_tester/"
     "_endstone_dynamic_properties_live.cpython-314-x86_64-linux-gnu.so"
 )
+RUNTIME_LIBRARY_MEMBERS = tuple(
+    f"{TESTER_DISTRIBUTION}/_native_libs/{name}"
+    for name in ("libc++.so.1", "libc++abi.so.1", "libunwind.so.1")
+)
+LLVM_LICENSE_MEMBER = f"{TESTER_DISTRIBUTION}/LLVM-LICENSE.txt"
 GLIBC_VERSION = re.compile(rb"GLIBC_([0-9]+(?:\.[0-9]+)+)")
 
 
@@ -78,7 +83,9 @@ def validate_elf_x86_64(
     return required
 
 
-def validate_tester_wheel(wheel: Path, glibc_ceiling: str) -> str:
+def validate_tester_wheel(
+    wheel: Path, glibc_ceiling: str
+) -> tuple[str, dict[str, str]]:
     with ZipFile(wheel) as archive:
         names = archive.namelist()
         if names.count(BRIDGE_MEMBER) != 1:
@@ -88,6 +95,21 @@ def validate_tester_wheel(wheel: Path, glibc_ceiling: str) -> str:
         bridge_glibc = validate_elf_x86_64(
             archive.read(BRIDGE_MEMBER), "Tester wheel bridge", glibc_ceiling
         )
+        runtime_glibc: dict[str, str] = {}
+        for member in RUNTIME_LIBRARY_MEMBERS:
+            if names.count(member) != 1:
+                raise SystemExit(
+                    f"Tester wheel must contain exactly one runtime library {member!r}"
+                )
+            runtime_glibc[Path(member).name] = validate_elf_x86_64(
+                archive.read(member),
+                f"Tester wheel runtime {Path(member).name}",
+                glibc_ceiling,
+            )
+        if names.count(LLVM_LICENSE_MEMBER) != 1:
+            raise SystemExit(
+                f"Tester wheel must contain the LLVM runtime license {LLVM_LICENSE_MEMBER!r}"
+            )
         wheel_metadata = [name for name in names if name.endswith(".dist-info/WHEEL")]
         if len(wheel_metadata) != 1:
             raise SystemExit("Tester wheel must contain exactly one WHEEL metadata file")
@@ -96,7 +118,7 @@ def validate_tester_wheel(wheel: Path, glibc_ceiling: str) -> str:
             raise SystemExit("Tester wheel containing the bridge must not be pure Python")
         if f"Tag: {PYTHON_ABI_TAG}" not in metadata:
             raise SystemExit(f"Tester wheel must declare tag {PYTHON_ABI_TAG!r}")
-    return bridge_glibc
+    return bridge_glibc, runtime_glibc
 
 
 def zip_timestamp() -> tuple[int, int, int, int, int, int]:
@@ -178,7 +200,7 @@ def main() -> int:
         raise SystemExit(
             f"Matching tester wheel must be {expected_wheel!r}; got {wheel.name!r}"
         )
-    bridge_glibc = validate_tester_wheel(wheel, glibc_ceiling)
+    bridge_glibc, runtime_glibc = validate_tester_wheel(wheel, glibc_ceiling)
 
     build_mode = stage / "evidence" / "BUILD_MODE.txt"
     if not build_mode.is_file():
@@ -245,6 +267,7 @@ def main() -> int:
                 "ceiling": glibc_ceiling,
                 "plugin_minimum": plugin_glibc,
                 "tester_bridge_minimum": bridge_glibc,
+                "tester_runtime_minimum": runtime_glibc,
             },
             "plugin": f"plugins/{INSTALLED_PLUGIN_NAME}",
             "tester_wheel": f"plugins/{expected_wheel}",
